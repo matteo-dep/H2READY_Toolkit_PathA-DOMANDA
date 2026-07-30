@@ -202,7 +202,6 @@ Inserisci le stime dei fabbisogni (tonnellate/anno) delle aziende risultate idon
 **🔵 FASE 3: Esportazione**
 Inserisci il tuo **Codice Identificativo** (lo stesso utilizzato nei questionari 1.1 e 1.2) in fondo alla pagina e clicca "Salva" per inviare i dati al database centrale.
         """,
-        "note_codes": "**Nota sui codici ATECO:** il tool legge solo le **prime 4 cifre** del codice (la *Classe*), ignorando le ultime cifre che hanno finalità puramente contabili/statistiche. Se inserisci un codice non presente nel database prioritario per l'idrogeno, il tool riconosce comunque il **macro-settore** (prime 2 cifre) ed emette un alert chiedendoti di verificare il dato.",
         "info_template1": "💡 Se non hai ancora i dati di screening, usa questo modello. **Attenzione: i dati vanno caricati mantenendo esattamente questo formato (stessi nomi delle colonne e struttura).**",
         "info_template2": "💡 Usa questo modello per consolidare le tonnellate di idrogeno necessarie. **Attenzione: i dati vanno caricati rispettando rigorosamente il formato di questo template.**",
         "btn_template1": "📥 Scarica Template Screening (Fase 1)",
@@ -249,7 +248,6 @@ Enter the estimated needs (tons/year) for the eligible companies. The template i
 **🔵 PHASE 3: Export**
 Enter your **Identification Code** at the bottom of the page and click "Save".
         """,
-        "note_codes": "**Note on NACE codes:** the tool reads only the **first 4 digits** of the code (the *Class*), ignoring the trailing digits used for purely statistical purposes. If you enter a code not in the hydrogen priority database, the tool still recognises the **macro-sector** (first 2 digits) and raises an alert asking you to verify the data.",
         "info_template1": "💡 If you don't have the screening data yet, use this template. **Warning: data must be uploaded keeping exactly this format (same column names and structure).**",
         "info_template2": "💡 Use this template to consolidate hydrogen tons. **Warning: data must be uploaded strictly following the format of this template.**",
         "btn_template1": "📥 Download Screening Template (Phase 1)",
@@ -295,7 +293,6 @@ Vnesite ocenjene potrebe (tone/leto) za ustrezna podjetja. Predloga je na voljo 
 **🔵 3. FAZA: Izvoz**
 Na dnu strani vnesite svojo **Identifikacijsko kodo** in kliknite "Shrani".
         """,
-        "note_codes": "**Opomba o kodah SKD:** orodje prebere le **prve 4 števke** kode (*razred*) in zanemari zadnje števke, ki imajo zgolj statistični namen. Če vnesete kodo, ki je ni v prednostni vodikovi bazi, orodje vseeno prepozna **makro-sektor** (prvi 2 števki) in sproži opozorilo, da preverite podatek.",
         "info_template1": "💡 Če še nimate podatkov za pregled, uporabite to predlogo. **Opozorilo: podatke je treba naložiti v natančno tem formatu (enaka imena stolpcev in struktura).**",
         "info_template2": "💡 Uporabite to predlogo za konsolidacijo ton vodika. **Opozorilo: podatke naložite strogo v skladu s formatom te predloge.**",
         "btn_template1": "📥 Prenesi predlogo za pregled (1. faza)",
