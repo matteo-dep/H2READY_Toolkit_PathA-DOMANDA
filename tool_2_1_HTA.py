@@ -661,7 +661,6 @@ st.divider()
 with st.expander(_t["instr_title"], expanded=True):
     st.markdown(_t["instructions_md"])
     st.markdown("---")
-    st.markdown(_t["note_codes"])
     st.markdown("---")
     nome_file_logica = f"logic_HTA_{LANG}.md"
     if os.path.exists(nome_file_logica):
