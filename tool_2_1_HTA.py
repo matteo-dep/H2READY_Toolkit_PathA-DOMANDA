@@ -194,13 +194,13 @@ Come referente dell'Ente, il tuo compito è **mappare le industrie del tuo terri
 **Segui questi 3 passaggi:**
 
 **🟢 FASE 1: Screening Iniziale**
-Carica il file di screening nella sezione dedicata. Il simulatore filtrerà le aziende idonee. Se non hai il file, scarica il template subito sotto l'area di caricamento.
+Carica il file di screening nella sezione dedicata. Il simulatore filtrerà le aziende idonee. Se non hai il file, scarica il template subito sotto l'area di caricamento in corrispondenza del comando "upload".
 
 **🟡 FASE 2: Consolidamento Fabbisogni**
-Inserisci le stime dei fabbisogni (tonnellate/anno) delle aziende risultate idonee. Anche qui, trovi il template dedicato sotto l'uploader.
+Inserisci le stime dei fabbisogni (tonnellate/anno) delle aziende risultate idonee. Anche qui, trovi il template dedicato in corrispondenza del comando "upload".
 
 **🔵 FASE 3: Esportazione**
-Inserisci il tuo **Codice Identificativo** in fondo alla pagina e clicca "Salva" per inviare i dati al database centrale.
+Inserisci il tuo **Codice Identificativo** (lo stesso utilizzato nei questionari 1.1 e 1.2) in fondo alla pagina e clicca "Salva" per inviare i dati al database centrale.
         """,
         "note_codes": "**Nota sui codici ATECO:** il tool legge solo le **prime 4 cifre** del codice (la *Classe*), ignorando le ultime cifre che hanno finalità puramente contabili/statistiche. Se inserisci un codice non presente nel database prioritario per l'idrogeno, il tool riconosce comunque il **macro-settore** (prime 2 cifre) ed emette un alert chiedendoti di verificare il dato.",
         "info_template1": "💡 Se non hai ancora i dati di screening, usa questo modello. **Attenzione: i dati vanno caricati mantenendo esattamente questo formato (stessi nomi delle colonne e struttura).**",
