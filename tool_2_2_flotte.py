@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import re
 import os
+import math
 
 # ==========================================================================
 # H2READY TOOLKIT - Tool 2.2: TCO & confronto flotte
@@ -57,7 +58,25 @@ T = {
         "tratta": "Tratta più lunga senza sosta [km]",
         "tratta_help": "La percorrenza massima che il mezzo deve coprire prima di potersi fermare a ricaricare o rifornire. Serve a verificare se l'autonomia basta.",
         "prices": "💶 Prezzi dei vettori energetici",
-        "price_note": "⚠️ I prezzi sono **alla pompa** (comprensivi di distribuzione e compressione). Il costo di produzione dell'idrogeno grigio è molto più basso (~2 €/kg), ma non è confrontabile con gli altri valori: vedi il README.",
+        "price_note": "⚠️ Due prezzi per ogni vettore: **al deposito** (dove il mezzo parte pieno) e **in viaggio** (colonnina o stazione pubblica, più cara). Il tool usa la media pesata sulla quota di energia comprata fuori sede.",
+        "p_depot": "deposito", "p_road": "in viaggio",
+        "downtime": "Costo del fermo operativo [€/h]",
+        "downtime_help": "Quanto vale un'ora di mezzo fermo a ricaricare o rifornire: autista, servizio mancato, ritardo. Metti 0 per escludere questa voce dal costo totale.",
+        "ops": "⚖️ Prestazioni in servizio: cosa cambia davvero",
+        "ops_note": "Il mezzo parte pieno dal deposito. Tutto ciò che supera la sua autonomia va comprato lungo strada, a prezzo pubblico e con una sosta. Ecco cosa comporta sulla tratta impostata.",
+        "o_vec": "Alimentazione", "o_range": "Autonomia", "o_stops": "Soste per tratta",
+        "o_stoptime": "Durata sosta", "o_down": "Fermo annuo flotta",
+        "o_share": "Energia in viaggio", "o_price": "Prezzo medio effettivo",
+        "pros": "Vantaggi", "limits": "Limiti",
+        "leg_down": "Fermo per rifornimento",
+        "proscons": {
+            "ice": ("Rifornimento in pochi minuti e rete capillare ovunque: nessun limite di percorrenza.",
+                    "Emissioni allo scarico, prezzo esposto ai mercati fossili, nessuna prospettiva di conformità climatica."),
+            "bev": ("Energia molto economica quando si carica al deposito, massima efficienza, manutenzione ridotta.",
+                    "Autonomia limitata e sensibile a freddo e pendenze; oltre l'autonomia serve ricarica pubblica, più cara e lenta; il peso della batteria sottrae carico utile."),
+            "fcev": ("Rifornimento rapido come il diesel, autonomia elevata, poco sensibile al freddo, nessuna perdita di carico utile.",
+                     "Costo del vettore ancora alto, rete di stazioni molto rada, efficienza complessiva bassa: serve più energia primaria."),
+        },
         "env_recap": "{oro} · {temp} · tratta {tratta} km",
         "takeaway": "Per {n} {veh} che percorrono {km} km/anno ciascuno, la soluzione **più economica** è {cheap} (circa {cheap_v} €/anno in totale) e quella **più pulita** è {clean} (circa {clean_v} t CO₂/anno).",
         "sort_label": "Ordina per:",
@@ -113,7 +132,25 @@ T = {
         "tratta": "Longest leg without a stop [km]",
         "tratta_help": "The maximum distance the vehicle must cover before it can stop to recharge or refuel. Used to check whether range is sufficient.",
         "prices": "💶 Energy carrier prices",
-        "price_note": "⚠️ Prices are **at the pump** (including distribution and compression). The production cost of grey hydrogen is far lower (~2 €/kg) but is not comparable with the other figures: see the README.",
+        "price_note": "⚠️ Two prices per carrier: **at the depot** (where the vehicle starts full) and **on the road** (public charger or station, more expensive). The tool uses the average weighted by the share of energy bought away from base.",
+        "p_depot": "depot", "p_road": "on the road",
+        "downtime": "Cost of operational downtime [€/h]",
+        "downtime_help": "What an hour of a vehicle stopped to recharge or refuel is worth: driver, missed service, delay. Set 0 to exclude this item from the total cost.",
+        "ops": "⚖️ In-service performance: what really changes",
+        "ops_note": "The vehicle leaves the depot full. Anything beyond its range must be bought en route, at public prices and with a stop. Here is what that means for the leg you set.",
+        "o_vec": "Powertrain", "o_range": "Range", "o_stops": "Stops per leg",
+        "o_stoptime": "Stop duration", "o_down": "Annual fleet downtime",
+        "o_share": "Energy bought en route", "o_price": "Effective average price",
+        "pros": "Advantages", "limits": "Limitations",
+        "leg_down": "Refuelling downtime",
+        "proscons": {
+            "ice": ("Refuelling in minutes and a dense network everywhere: no range limit.",
+                    "Tailpipe emissions, price exposed to fossil markets, no path to climate compliance."),
+            "bev": ("Very cheap energy when charged at the depot, highest efficiency, reduced maintenance.",
+                    "Limited range, sensitive to cold and gradients; beyond its range it needs public charging, more expensive and slow; battery weight eats into payload."),
+            "fcev": ("Refuelling as fast as diesel, long range, little sensitivity to cold, no payload penalty.",
+                     "Carrier still expensive, station network very sparse, low overall efficiency: more primary energy needed."),
+        },
         "env_recap": "{oro} · {temp} · longest leg {tratta} km",
         "takeaway": "For {n} {veh} driving {km} km/year each, the **cheapest** option is {cheap} (about {cheap_v} €/yr in total) and the **cleanest** is {clean} (about {clean_v} t CO₂/yr).",
         "sort_label": "Sort by:",
@@ -169,7 +206,25 @@ T = {
         "tratta": "Najdaljši odsek brez postanka [km]",
         "tratta_help": "Največja razdalja, ki jo mora vozilo prevoziti, preden se lahko ustavi za polnjenje ali oskrbo. Uporablja se za preverjanje zadostnosti dosega.",
         "prices": "💶 Cene energentov",
-        "price_note": "⚠️ Cene so **na točilni napravi** (vključno z distribucijo in stiskanjem). Proizvodni strošek sivega vodika je precej nižji (~2 €/kg), a ni primerljiv z drugimi vrednostmi: glejte README.",
+        "price_note": "⚠️ Dve ceni za vsak energent: **v bazi** (kjer vozilo krene polno) in **na poti** (javna polnilnica ali postaja, dražje). Orodje uporabi povprečje, uteženo z deležem energije, kupljene zunaj baze.",
+        "p_depot": "v bazi", "p_road": "na poti",
+        "downtime": "Strošek operativnega mirovanja [€/h]",
+        "downtime_help": "Koliko je vredna ura vozila, ki stoji zaradi polnjenja ali oskrbe: voznik, izpadla storitev, zamuda. Vnesite 0, da postavko izključite iz skupnega stroška.",
+        "ops": "⚖️ Zmogljivost v obratovanju: kaj se dejansko spremeni",
+        "ops_note": "Vozilo zapusti bazo polno. Vse, kar presega njegov doseg, je treba kupiti na poti, po javni ceni in s postankom. Tu je, kaj to pomeni za nastavljeni odsek.",
+        "o_vec": "Pogon", "o_range": "Doseg", "o_stops": "Postanki na odsek",
+        "o_stoptime": "Trajanje postanka", "o_down": "Letno mirovanje parka",
+        "o_share": "Energija, kupljena na poti", "o_price": "Dejanska povprečna cena",
+        "pros": "Prednosti", "limits": "Omejitve",
+        "leg_down": "Mirovanje zaradi oskrbe",
+        "proscons": {
+            "ice": ("Oskrba v nekaj minutah in gosto omrežje povsod: brez omejitve dosega.",
+                    "Emisije iz izpuha, cena izpostavljena trgu fosilnih goriv, brez možnosti podnebne skladnosti."),
+            "bev": ("Zelo poceni energija ob polnjenju v bazi, najvišja učinkovitost, manj vzdrževanja.",
+                    "Omejen doseg, občutljiv na mraz in naklone; onkraj dosega je potrebno javno polnjenje, dražje in počasnejše; teža baterije zmanjša koristni tovor."),
+            "fcev": ("Oskrba tako hitra kot pri dizlu, velik doseg, malo občutljiv na mraz, brez izgube koristnega tovora.",
+                     "Energent je še vedno drag, omrežje postaj zelo redko, nizka skupna učinkovitost: potrebne je več primarne energije."),
+        },
         "env_recap": "{oro} · {temp} · odsek {tratta} km",
         "takeaway": "Za {n} {veh}, ki prevozijo {km} km/leto vsako, je **najcenejša** rešitev {cheap} (skupaj približno {cheap_v} €/leto), **najčistejša** pa {clean} (približno {clean_v} t CO₂/leto).",
         "sort_label": "Razvrsti po:",
@@ -215,7 +270,7 @@ _t = T[LANG]
 # ==========================================================================
 VEHICLES = {
     "auto":  {"icon": "🚗", "life": 20, "km_default": 15000,  "km_max": 60000,
-              "tratta_default": 150, "tratta_max": 1200,
+              "tratta_default": 150, "tratta_max": 1200, "charge_kw": 100,
               "vectors": {
                   "benzina":   {"unit": "l",   "cons": 0.067250, "prim": 0.6925, "wtt": 0.03884, "ttw": 0.15535, "constr": 6000,  "maint": 0.0800, "capex": 41000,  "range": 800},
                   "diesel":    {"unit": "l",   "cons": 0.054000, "prim": 0.6147, "wtt": 0.02138, "ttw": 0.14256, "constr": 6000,  "maint": 0.0650, "capex": 45000,  "range": 950},
@@ -226,7 +281,7 @@ VEHICLES = {
                   "h2_verde":  {"unit": "kg",  "cons": 0.010000, "prim": 0.5376, "wtt": 0.03000, "ttw": 0.0,     "constr": 14000, "maint": 0.0550, "capex": 67500, "range": 600},
               }},
     "truck": {"icon": "🚛", "life": 7, "km_default": 170000, "km_max": 300000,
-              "tratta_default": 500, "tratta_max": 1500,
+              "tratta_default": 500, "tratta_max": 1500, "charge_kw": 350,
               "vectors": {
                   "diesel":    {"unit": "l",   "cons": 0.330000, "prim": 3.7563,  "wtt": 0.13068, "ttw": 0.87120, "constr": 60000,  "maint": 0.2500, "capex": 115000, "range": 1400},
                   "elc_rete":  {"unit": "kwh", "cons": 1.572500, "prim": 3.1450,  "wtt": 0.33809, "ttw": 0.0,     "constr": 110000, "maint": 0.1400, "capex": 245000, "range": 400},
@@ -236,7 +291,7 @@ VEHICLES = {
                   "h2_verde":  {"unit": "kg",  "cons": 0.084167, "prim": 4.5246,  "wtt": 0.25250, "ttw": 0.0,     "constr": 125000, "maint": 0.2000, "capex": 400000, "range": 800},
               }},
     "bus_u": {"icon": "🚌", "life": 13, "km_default": 70000, "km_max": 150000,
-              "tratta_default": 200, "tratta_max": 600,
+              "tratta_default": 200, "tratta_max": 600, "charge_kw": 150,
               "vectors": {
                   "diesel":    {"unit": "l",   "cons": 0.386667, "prim": 4.4014,  "wtt": 0.15312, "ttw": 1.02080, "constr": 50000, "maint": 0.3250, "capex": 213333, "range": 600},
                   "elc_rete":  {"unit": "kwh", "cons": 1.677500, "prim": 3.3550,  "wtt": 0.36066, "ttw": 0.0,     "constr": 85000, "maint": 0.1600, "capex": 397500, "range": 250},
@@ -246,7 +301,7 @@ VEHICLES = {
                   "h2_verde":  {"unit": "kg",  "cons": 0.096333, "prim": 5.1787,  "wtt": 0.28900, "ttw": 0.0,     "constr": 95000, "maint": 0.2750, "capex": 566667, "range": 400},
               }},
     "bus_x": {"icon": "🚍", "life": 15, "km_default": 75000, "km_max": 150000,
-              "tratta_default": 300, "tratta_max": 900,
+              "tratta_default": 300, "tratta_max": 900, "charge_kw": 150,
               "vectors": {
                   "diesel":    {"unit": "l",   "cons": 0.283333, "prim": 3.2251, "wtt": 0.11220, "ttw": 0.85977, "constr": 50000, "maint": 0.2300, "capex": 227500, "range": 800},
                   "elc_rete":  {"unit": "kwh", "cons": 1.166667, "prim": 2.3333, "wtt": 0.25083, "ttw": 0.0,     "constr": 85000, "maint": 0.1350, "capex": 450000, "range": 300},
@@ -263,6 +318,18 @@ VEHICLES = {
 # diesel. Portato a 10.00 €/kg (erogato a 700 bar). Vedi README.
 FUEL_DEFAULTS = {"benzina": 1.90, "diesel": 1.80, "elc_rete": 0.31, "elc_auto": 0.24,
                  "h2_grigio": 10.00, "h2_rete": 20.00, "h2_verde": 15.00}
+
+# Prezzo dell'energia acquistata IN VIAGGIO (colonnina o stazione pubblica).
+# È la voce che rende costose le lunghe percorrenze per i mezzi a batteria:
+# la ricarica rapida pubblica costa circa il doppio dell'energia al deposito.
+FUEL_ROAD = {"benzina": 1.95, "diesel": 1.85, "elc_rete": 0.70, "elc_auto": 0.70,
+             "h2_grigio": 12.00, "h2_rete": 20.00, "h2_verde": 20.00}
+
+# Durata di una sosta di rifornimento per i vettori a pieno rapido [minuti].
+# Per i BEV NON è un dato fisso: si calcola da energia della batteria e potenza
+# di ricarica disponibile (vedi funzione calcola).
+REFUEL_MIN = {"ice": 10.0, "fcev": 15.0}
+RECHARGE_SOC = 0.80          # quota di batteria ripristinata in una sosta rapida
 
 VECTOR_ICON = {"benzina": "⛽", "diesel": "⛽", "elc_rete": "⚡", "elc_auto": "🔆",
                "h2_grigio": "💧", "h2_rete": "💧", "h2_verde": "💧"}
@@ -335,6 +402,22 @@ CSS = """
 .h2b-total { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:.95rem; }
 .h2b-total small { opacity:.55; font-weight:500; font-size:.66rem; }
 @media (max-width:560px){ .h2b-row{ grid-template-columns:120px 1fr 92px; } }
+table.h2-ops { width:100%; border-collapse:collapse; margin:6px 0 18px 0; font-size:.85rem; }
+table.h2-ops th { text-align:right; font-size:.68rem; text-transform:uppercase; letter-spacing:.04em;
+                  opacity:.55; font-weight:600; padding:6px 10px; border-bottom:1px solid rgba(127,127,127,.30); }
+table.h2-ops th:first-child { text-align:left; }
+table.h2-ops td { text-align:right; padding:9px 10px; border-bottom:1px solid rgba(127,127,127,.16);
+                  font-family:'Space Grotesk',sans-serif; }
+table.h2-ops td.nm { text-align:left; font-family:inherit; font-weight:600; }
+table.h2-ops td small { opacity:.5; font-weight:500; font-size:.68rem; }
+table.h2-ops tr:last-child td { border-bottom:none; }
+.h2pc-wrap { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:12px; margin-bottom:6px; }
+.h2pc { background:rgba(127,127,127,.08); border:1px solid rgba(127,127,127,.22);
+        border-left-width:5px; border-radius:11px; padding:13px 15px; }
+.h2pc-h { font-weight:700; font-size:.92rem; margin-bottom:9px; }
+.h2pc-r { font-size:.83rem; line-height:1.45; margin-bottom:7px; }
+.h2pc-r .k { display:block; font-size:.66rem; text-transform:uppercase; letter-spacing:.05em;
+             font-weight:700; margin-bottom:2px; }
 </style>
 """
 
@@ -365,14 +448,21 @@ TEMP = temp_labels[temp_choice]
 tratta = st.sidebar.slider(_t["tratta"], 10, vdata["tratta_max"], vdata["tratta_default"], 10,
                            help=_t["tratta_help"])
 
+costo_fermo = st.sidebar.number_input(_t["downtime"], min_value=0.0, value=30.0, step=5.0,
+                                      format="%.0f", help=_t["downtime_help"])
+
 prezzi = {}
+prezzi_road = {}
 with st.sidebar.expander(_t["prices"], expanded=False):
     st.caption(_t["price_note"])
     for fk, dv in FUEL_DEFAULTS.items():
         if fk not in vdata["vectors"]:
             continue
-        prezzi[fk] = st.number_input(f"{_t['fuels'][fk]} [{_t['units'][fk]}]", value=float(dv),
-                                     format="%.2f", key=f"p_{fk}")
+        st.markdown(f"**{_t['fuels'][fk]}** [{_t['units'][fk]}]")
+        c_a, c_b = st.columns(2)
+        prezzi[fk] = c_a.number_input(_t["p_depot"], value=float(dv), format="%.2f", key=f"p_{fk}")
+        prezzi_road[fk] = c_b.number_input(_t["p_road"], value=float(FUEL_ROAD[fk]),
+                                           format="%.2f", key=f"pr_{fk}")
 
 # ==========================================================================
 # 5. CALCOLO
@@ -403,26 +493,53 @@ def calcola(vk, v):
 
     cons_km = v["cons"] * m                             # consumo corretto per km
     cons_tot = cons_km * km_tot                         # unità naturali/anno (flotta)
-    fuel = cons_tot * prezzi.get(vk, 0.0)               # €/anno
-    maint = v["maint"] * km_tot                         # €/anno
-    capex = v["capex"] * n_mezzi / lifetime             # €/anno
-    tco = fuel + maint + capex
-    wtt = v["wtt"] * m * km_tot / 1000.0                # t CO2/anno
+    range_eff = v["range"] / m                          # autonomia derata
+
+    # --- Dove viene comprata l'energia -------------------------------------
+    # Il mezzo parte pieno dal deposito: copre range_eff km con energia
+    # "di casa". Tutto ciò che eccede va comprato in viaggio, a prezzo pubblico.
+    share_road = max(0.0, tratta - range_eff) / tratta if tratta > 0 else 0.0
+    p_dep = prezzi.get(vk, 0.0)
+    p_road = prezzi_road.get(vk, p_dep)
+    p_eff = p_dep * (1.0 - share_road) + p_road * share_road
+
+    # --- Soste in viaggio e fermo operativo --------------------------------
+    stops_leg = max(0, math.ceil(tratta / range_eff) - 1) if range_eff > 0 else 0
+    legs_year = km_anno / tratta if tratta > 0 else 0.0
+    stops_year = stops_leg * legs_year * n_mezzi        # soste/anno per la flotta
+
+    if cat == "bev":
+        batt_kwh = v["range"] * v["cons"]               # capacità utile (invariante)
+        stop_h = (batt_kwh * RECHARGE_SOC) / vdata["charge_kw"]
+    else:
+        stop_h = REFUEL_MIN[cat] / 60.0
+    down_h = stops_year * stop_h                        # ore/anno di fermo flotta
+    down_cost = down_h * costo_fermo
+
+    # --- Costi --------------------------------------------------------------
+    fuel = cons_tot * p_eff                             # €/anno (prezzo misto)
+    maint = v["maint"] * km_tot
+    capex = v["capex"] * n_mezzi / lifetime
+    tco = fuel + maint + capex + down_cost
+
+    # --- Emissioni ----------------------------------------------------------
+    wtt = v["wtt"] * m * km_tot / 1000.0
     ttw = v["ttw"] * m * km_tot / 1000.0
     constr = v["constr"] * n_mezzi / lifetime / 1000.0  # non dipende dalle condizioni
 
-    range_eff = v["range"] / m                          # autonomia derata
     feas_key, feas_lbl, feas_col = valuta_tratta(range_eff)
 
     return {
         "key": vk, "Nome": _t["vectors"][vk], "icon": VECTOR_ICON[vk], "cat": cat,
         "Consumo": cons_km, "ConsBase": v["cons"], "unit": v["unit"], "Mult": m,
         "ConsTot": cons_tot,
-        "Fuel": fuel, "Maint": maint, "CAPEx": capex, "TCO": tco,
+        "Fuel": fuel, "Maint": maint, "CAPEx": capex, "Down": down_cost, "TCO": tco,
         "EurKm": tco / km_tot if km_tot else 0.0,
         "WtT": wtt, "TtW": ttw, "Constr": constr, "CO2": wtt + ttw + constr,
         "Prim": v["prim"] * m * km_tot / 1000.0,        # MWh/anno
         "Range": range_eff, "FeasKey": feas_key, "FeasLbl": feas_lbl, "FeasCol": feas_col,
+        "ShareRoad": share_road, "PEff": p_eff, "StopsLeg": stops_leg,
+        "StopH": stop_h, "DownH": down_h,
     }
 
 df = pd.DataFrame([calcola(vk, v) for vk, v in vdata["vectors"].items()])
@@ -555,9 +672,50 @@ def render_breakdown(data, segments, unit, sort_col, dec=0):
                  f"<div class='h2b-total'>{fmt(total, dec)} <small>{unit}</small></div></div>")
     return legend + rows
 
+# --- Prestazioni operative: cosa cambia in servizio ---------------------
+st.markdown(f"### {_t['ops']}")
+st.markdown(f"<div class='h2-note'>{_t['ops_note']}</div>", unsafe_allow_html=True)
+
+hdr = [_t["o_vec"], _t["o_range"], _t["o_stops"], _t["o_stoptime"],
+       _t["o_down"], _t["o_share"], _t["o_price"]]
+rows_html = "".join(f"<th>{h}</th>" for h in hdr)
+body = ""
+for _, r in df.sort_values("TCO").iterrows():
+    stop_txt = "—" if r["StopsLeg"] == 0 else f"{int(r['StopsLeg'])}"
+    time_txt = f"{r['StopH'] * 60:.0f} min" if r["StopH"] < 1 else f"{r['StopH']:.1f} h"
+    down_txt = "—" if r["DownH"] < 1 else f"{fmt(r['DownH'])} h"
+    share_txt = "—" if r["ShareRoad"] <= 0 else f"{r['ShareRoad'] * 100:.0f}%"
+    col = r["FeasCol"] if r["StopsLeg"] > 0 else "inherit"
+    body += (f"<tr><td class='nm'>{r['icon']} {r['Nome']}</td>"
+             f"<td>{fmt(r['Range'])} km</td>"
+             f"<td style='color:{col};font-weight:700'>{stop_txt}</td>"
+             f"<td>{time_txt}</td><td>{down_txt}</td>"
+             f"<td style='color:{col}'>{share_txt}</td>"
+             f"<td><b>{fmt(r['PEff'], 2)}</b> <small>{_t['units'][r['key']]}</small></td></tr>")
+st.markdown(f"<table class='h2-ops'><thead><tr>{rows_html}</tr></thead><tbody>{body}</tbody></table>",
+            unsafe_allow_html=True)
+
+# Vantaggi e limiti per famiglia di powertrain (solo quelle presenti)
+pc_cards = ""
+CAT_LBL = {"ice": "⛽", "bev": "⚡", "fcev": "💧"}
+for cat in ("ice", "bev", "fcev"):
+    sub = df[df["cat"] == cat]
+    if sub.empty:
+        continue
+    pro, lim = _t["proscons"][cat]
+    nomi = " · ".join(sub["Nome"].tolist())
+    accent = {"ice": "#A33B4A", "bev": "#0D7C5C", "fcev": "#1C7C8C"}[cat]
+    pc_cards += (f"<div class='h2pc' style='border-left-color:{accent}'>"
+                 f"<div class='h2pc-h'>{CAT_LBL[cat]} {nomi}</div>"
+                 f"<div class='h2pc-r'><span class='k' style='color:#0D7C5C'>{_t['pros']}</span>{pro}</div>"
+                 f"<div class='h2pc-r'><span class='k' style='color:#A33B4A'>{_t['limits']}</span>{lim}</div>"
+                 f"</div>")
+st.markdown(f"<div class='h2pc-wrap'>{pc_cards}</div>", unsafe_allow_html=True)
+
 with st.expander(_t["detail"], expanded=True):
     st.markdown(f"<div class='h2-bd-title'>{_t['chart_cost']}</div>", unsafe_allow_html=True)
-    seg_cost = [("CAPEx", _t["leg_capex"], "#0E6E7E"), ("Maint", _t["leg_maint"], "#C58A1A"), ("Fuel", _t["leg_fuel"], "#A33B4A")]
+    seg_cost = [("CAPEx", _t["leg_capex"], "#0E6E7E"), ("Maint", _t["leg_maint"], "#C58A1A"),
+                ("Fuel", _t["leg_fuel"], "#A33B4A"), ("Down", _t["leg_down"], "#6B4E7D")]
     st.markdown(render_breakdown(df, seg_cost, _t["u_tco"], "TCO"), unsafe_allow_html=True)
 
     st.markdown(f"<div class='h2-bd-title'>{_t['chart_em']}</div>", unsafe_allow_html=True)
