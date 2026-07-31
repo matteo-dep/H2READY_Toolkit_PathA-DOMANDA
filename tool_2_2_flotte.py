@@ -36,7 +36,11 @@ st.title("🚗 H2READY: Simulatore Strategico di Flotta")
 st.markdown("Confronto **Diesel / Elettrico / Idrogeno** con curve di proiezione tecnologica "
             "(2024-2035) per un'analisi dinamica del TCO e delle emissioni LCA.")
 
-NOME_FILE_MD = "REadMe_Mezzi.md"
+LANG_OPTIONS = {"Italiano": "it", "English": "en", "Slovenščina": "sl"}
+lang_readme = st.sidebar.selectbox("🌐 Lingua della documentazione", list(LANG_OPTIONS.keys()),
+                                   help="Cambia la lingua del manuale qui sotto. "
+                                        "L'interfaccia resta in italiano.")
+NOME_FILE_MD = f"REadMe_Mezzi_{LANG_OPTIONS[lang_readme]}.md"
 if os.path.exists(NOME_FILE_MD):
     with st.expander("ℹ️ Leggi Istruzioni, Logiche e Assunzioni del Simulatore"):
         with open(NOME_FILE_MD, "r", encoding="utf-8") as f:
