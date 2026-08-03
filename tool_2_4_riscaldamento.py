@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import os
+import requests
+import json
 
 # ==========================================================================
 # DSS COMUNI - Tool 2.4: Confronto sistemi di riscaldamento (H2 / Elc / FF)
