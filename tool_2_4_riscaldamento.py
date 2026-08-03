@@ -400,3 +400,42 @@ with st.expander(_t["table"]):
         "Label": _t["c_tech"], "En_Primaria": _t["c_prim"], "Eta": _t["c_eff"], "Emiss": _t["c_em"], "Costo": _t["c_cost"]})
     st.dataframe(show.style.format({_t["c_prim"]: "{:,.0f}", _t["c_eff"]: "{:.2f}",
                                     _t["c_em"]: "{:,.0f}", _t["c_cost"]: "€ {:,.0f}"}), use_container_width=True)
+
+# ==========================================================================
+# 11. ESPORTAZIONE NEL DATABASE CENTRALE
+# ==========================================================================
+WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwpP0x0hBnhOadXA43IieWg9EusAuhaafpyeXpyaStssDd7Qo-jwnuOttAllzz8r5JS/exec"
+
+st.divider()
+st.subheader("💾 Esportazione")
+
+# Riferimento fossile per il risparmio di emissioni: la caldaia a metano.
+em_metano = df.loc[df["type"] == "boiler_gas", "Emiss"].values[0]
+em_pulita = df.loc[idx_clean, "Emiss"]
+
+sol_economica = f'{df.loc[idx_cheap, "Nome"]} · {df.loc[idx_cheap, "Vettore"]}'
+sol_pulita = f'{df.loc[idx_clean, "Nome"]} · {df.loc[idx_clean, "Vettore"]}'
+
+codice = st.text_input("Codice identificativo del Comune (es. 030043):", key="id_calore")
+
+if st.button("💾 Esporta nel database centrale", type="primary"):
+    if not codice:
+        st.error("Inserisci il codice identificativo prima di procedere.")
+    else:
+        payload = {
+            "ID_ISTAT": codice,
+            "T24_FABBISOGNO_TERMICO_KWH_ANNO": int(user_fabbisogno),
+            "T24_SOLUZIONE_OTTIMALE": sol_economica,
+            "T24_SOLUZIONE_PIU_PULITA": sol_pulita,
+            "T24_EMISSIONI_EVITATE_KGCO2_ANNO": round(em_metano - em_pulita, 0),
+        }
+        try:
+            resp = requests.post(WEBHOOK_URL, data=json.dumps(payload),
+                                 headers={"Content-Type": "application/json"}, timeout=20)
+            if resp.status_code in (200, 201):
+                st.success("✅ Dati trasmessi correttamente.")
+                st.balloons()
+            else:
+                st.error(f"Errore di sincronizzazione (codice {resp.status_code})")
+        except Exception as e:
+            st.error(f"Errore di connessione: {e}")
