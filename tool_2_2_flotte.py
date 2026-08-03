@@ -518,3 +518,50 @@ with st.expander("📋 Tabella dati completa"):
         "Efficienza WtW [%]": "{:.1f}", "TCO ciclo vita [€]": "€ {:,.0f}",
         "€/km": "{:.3f}", "€/t·km": "{:.3f}", "Carico utile [t]": "{:.1f}"}),
         hide_index=True)
+
+# ==========================================================================
+# 8. ESPORTAZIONE NEL DATABASE CENTRALE
+# ==========================================================================
+WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwpP0x0hBnhOadXA43IieWg9EusAuhaafpyeXpyaStssDd7Qo-jwnuOttAllzz8r5JS/exec"
+
+st.divider()
+st.header("💾 Esportazione")
+
+# L'esito prevalente riprende la logica del verdetto mostrato a schermo.
+if not bev_fattibile:
+    esito = "Idrogeno (unica soluzione fattibile)"
+elif tco_bev <= tco_h2:
+    esito = "Elettrico (BEV)"
+else:
+    esito = "Idrogeno (più conveniente)"
+
+em_fossile = rif_foss["E_Produzione"] + rif_foss["E_Carburante"]
+em_h2 = row_h2["E_Produzione"] + row_h2["E_Carburante"]
+
+codice = st.text_input("Codice identificativo del Comune (es. 030043):", key="id_flotta")
+
+if st.button("💾 Esporta nel database centrale", type="primary"):
+    if not codice:
+        st.error("Inserisci il codice identificativo prima di procedere.")
+    else:
+        payload = {
+            "ID_ISTAT": codice,
+            "T22_N_VEICOLI_ANALIZZATI": n_veicoli,
+            "T22_ESITO_PREVALENTE": esito,
+            "T22_BEV_FATTIBILE": "SI" if bev_fattibile else "NO",
+            "T22_FABBISOGNO_H2_TON_ANNO": round(cons_h2_kg / 1000, 2),
+            "T22_FABBISOGNO_ELETTRICO_MWH_ANNO": round(cons_bev_kwh / 1000, 1),
+            "T22_ENERGIA_ELETTROLISI_MWH_ANNO": round(energia_elettrolizzatore / 1000, 1),
+            "T22_DELTA_TCO_EURO": round(gap_h2 * n_veicoli, 0),
+            "T22_EMISSIONI_EVITATE_TCO2": round((em_fossile - em_h2) * n_veicoli, 1),
+        }
+        try:
+            resp = requests.post(WEBHOOK_URL, data=json.dumps(payload),
+                                 headers={"Content-Type": "application/json"}, timeout=20)
+            if resp.status_code in (200, 201):
+                st.success("✅ Dati trasmessi correttamente.")
+                st.balloons()
+            else:
+                st.error(f"Errore di sincronizzazione (codice {resp.status_code})")
+        except Exception as e:
+            st.error(f"Errore di connessione: {e}")
