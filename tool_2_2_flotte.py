@@ -3,6 +3,8 @@ import pandas as pd
 import plotly.express as px
 import math
 import os
+import requests
+import json
 
 # ==========================================================================
 # H2READY · Tool 2.2 — Simulatore Strategico di Flotta
