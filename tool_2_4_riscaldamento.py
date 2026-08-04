@@ -32,6 +32,56 @@ T = {
         "cop": "Resa della pompa di calore (COP)",
         "cop_help": "Quante unità di calore produce la pompa per ogni unità di elettricità. 3 significa 3 volte più efficiente di una stufa elettrica.",
         "takeaway": "In questo scenario, la soluzione <b>più economica</b> è {cheap} (circa {cheap_v} €/anno) e quella <b>più pulita</b> è {clean} (circa {clean_v} kg CO₂/anno).",
+        "scope_title": "ℹ️ Che cosa confronta questo strumento (e che cosa no)",
+        "scope_md": """
+        Il confronto è **a parità di calore consegnato all'edificio**: ogni soluzione viene
+        dimensionata per produrre lo stesso numero di kWh termici, così i costi e le emissioni
+        sono confrontabili fra loro.
+
+        Ogni voce comprende l'acquisto dell'impianto ripartito sugli anni di vita, la
+        manutenzione, il vettore energetico, e le emissioni di filiera (WtT), di camino (TtW)
+        e di costruzione.
+        
+        **Non è compresa la legna a ciocchi.** È una scelta consapevole: costo ed emissioni
+        della biomassa legnosa in ciocchi dipendono da troppe variabili non generalizzabili —
+        umidità del legno al momento della combustione, provenienza e distanza di trasporto,
+        autoconsumo o acquisto, tipo di apparecchio e soprattutto la conduzione manuale, che
+        da sola può far variare il rendimento reale del doppio. Un valore medio sarebbe
+        arbitrario e darebbe una precisione che non esiste. Il **pellet** è invece incluso,
+        perché standardizzato per pezzatura, umidità e potere calorifico.
+        """,
+        "vs_title": "⚡ contro 💧 — le due strade elettriche a confronto",
+        "vs_intro": "Pompa di calore e caldaia a idrogeno verde partono dalla stessa risorsa: elettricità rinnovabile. Cambia quanto ne serve.",
+        "vs_pdc": "Pompa di calore",
+        "vs_h2": "Caldaia a idrogeno verde",
+        "vs_chain": "Da 100 kWh di elettricità rinnovabile:",
+        "vs_heat": "kWh di calore",
+        "vs_ratio": "A parità di calore, l'idrogeno richiede **{r} volte** l'energia della pompa di calore.",
+        "vs_m_prim": "Energia primaria", "vs_m_cost": "Costo annuo", "vs_m_co2": "Emissioni",
+        "vs_why_title": "Perché la differenza è così grande",
+        "vs_why": """
+        La pompa di calore non produce calore: lo **sposta** dall'aria esterna dentro
+        l'edificio, e per farlo spende poca elettricità. È il motivo per cui rende più di 1.
+        
+        L'idrogeno percorre la strada opposta, e a ogni passaggio perde qualcosa: elettrolisi,
+        compressione, stoccaggio, combustione. Nessuno di questi passaggi è evitabile, e
+        sommati fanno sparire circa quattro quinti dell'energia di partenza.
+                """,
+                "vs_when_title": "Quando l'idrogeno può avere senso lo stesso",
+                "vs_when": """
+        - **Edifici dove la pompa di calore non è installabile**: vincoli su immobili storici,
+          assenza di spazio per le unità esterne, impianti a radiatori ad alta temperatura non
+          sostituibili.
+        - **Rete del gas già esistente** da riconvertire, dove il costo evitato di infrastruttura
+          compensa in parte l'inefficienza.
+        - **Calore di processo sopra i 100 °C**, fuori dalla portata delle pompe di calore
+          commerciali — ma allora si esce dall'ambito di questo strumento e si entra nel 2.1.
+        - **Picchi di potenza molto elevati e concentrati**, dove il dimensionamento elettrico
+          della pompa diventa proibitivo.
+        
+        Fuori da questi casi, destinare idrogeno al riscaldamento degli edifici sottrae una
+        risorsa scarsa agli usi dove non ha alternative.
+        """,
         "sort_label": "Ordina le soluzioni per:",
         "sort_cost": "💶 Costo", "sort_co2": "🌱 Emissioni", "sort_eff": "⚡ Efficienza",
         "m_cost": "Costo annuo", "u_cost": "€/anno",
@@ -68,6 +118,52 @@ T = {
         "cop": "Heat pump performance (COP)",
         "cop_help": "How many units of heat the pump produces per unit of electricity. 3 means 3× more efficient than an electric heater.",
         "takeaway": "In this scenario, the <b>cheapest</b> option is {cheap} (about {cheap_v} €/yr) and the <b>cleanest</b> is {clean} (about {clean_v} kg CO₂/yr).",
+        "scope_title": "ℹ️ What this tool compares (and what it does not)",
+        "scope_md": """
+        The comparison is made **at equal heat delivered to the building**: every option is
+        sized to produce the same number of thermal kWh, so costs and emissions are comparable.
+        
+        Each entry includes the purchase cost spread over the system lifetime, maintenance, the
+        energy carrier, and supply-chain (WtT), stack (TtW) and construction emissions.
+        
+        **Firewood logs are not included.** This is deliberate: cost and emissions of log wood
+        depend on too many variables that cannot be generalised — moisture at the moment of
+        combustion, origin and transport distance, self-supply or purchase, appliance type and
+        above all manual operation, which alone can halve or double real efficiency. An average
+        figure would be arbitrary. **Pellet is included**, being standardised in size, moisture
+        and calorific value.
+        """,
+        "vs_title": "⚡ vs 💧 — the two electric routes side by side",
+        "vs_intro": "Heat pump and green hydrogen boiler start from the same resource: renewable electricity. What differs is how much of it is needed.",
+        "vs_pdc": "Heat pump",
+        "vs_h2": "Green hydrogen boiler",
+        "vs_chain": "From 100 kWh of renewable electricity:",
+        "vs_heat": "kWh of heat",
+        "vs_ratio": "For the same heat, hydrogen needs **{r} times** the energy of a heat pump.",
+        "vs_m_prim": "Primary energy", "vs_m_cost": "Annual cost", "vs_m_co2": "Emissions",
+        "vs_why_title": "Why the gap is so wide",
+        "vs_why": """
+        A heat pump does not produce heat: it **moves** it from the outside air into the
+        building, spending little electricity to do so. That is why its output exceeds 1.
+        
+        Hydrogen takes the opposite path, losing something at every step: electrolysis,
+        compression, storage, combustion. None of these steps can be skipped, and together they
+        consume roughly four fifths of the initial energy.
+                """,
+                "vs_when_title": "When hydrogen can still make sense",
+                "vs_when": """
+        - **Buildings where a heat pump cannot be installed**: heritage constraints, no room for
+          outdoor units, high-temperature radiator systems that cannot be replaced.
+        - **An existing gas network** to be converted, where avoided infrastructure cost partly
+          offsets the inefficiency.
+        - **Process heat above 100 °C**, beyond commercial heat pumps — but that leaves the scope
+          of this tool and belongs to 2.1.
+        - **Very high, concentrated power peaks**, where electrical sizing of the pump becomes
+          prohibitive.
+        
+        Outside these cases, using hydrogen for space heating diverts a scarce resource from
+        uses that have no alternative.
+        """,
         "sort_label": "Sort the options by:",
         "sort_cost": "💶 Cost", "sort_co2": "🌱 Emissions", "sort_eff": "⚡ Efficiency",
         "m_cost": "Annual cost", "u_cost": "€/yr",
@@ -104,6 +200,52 @@ T = {
         "cop": "Učinkovitost toplotne črpalke (COP)",
         "cop_help": "Koliko enot toplote črpalka proizvede na enoto elektrike. 3 pomeni 3× bolj učinkovito od električnega grelnika.",
         "takeaway": "V tem scenariju je <b>najcenejša</b> rešitev {cheap} (približno {cheap_v} €/leto), <b>najčistejša</b> pa {clean} (približno {clean_v} kg CO₂/leto).",
+        "scope_title": "ℹ️ What this tool compares (and what it does not)",
+        "scope_md": """
+        The comparison is made **at equal heat delivered to the building**: every option is
+        sized to produce the same number of thermal kWh, so costs and emissions are comparable.
+        
+        Each entry includes the purchase cost spread over the system lifetime, maintenance, the
+        energy carrier, and supply-chain (WtT), stack (TtW) and construction emissions.
+        
+        **Firewood logs are not included.** This is deliberate: cost and emissions of log wood
+        depend on too many variables that cannot be generalised — moisture at the moment of
+        combustion, origin and transport distance, self-supply or purchase, appliance type and
+        above all manual operation, which alone can halve or double real efficiency. An average
+        figure would be arbitrary. **Pellet is included**, being standardised in size, moisture
+        and calorific value.
+        """,
+        "vs_title": "⚡ vs 💧 — the two electric routes side by side",
+        "vs_intro": "Heat pump and green hydrogen boiler start from the same resource: renewable electricity. What differs is how much of it is needed.",
+        "vs_pdc": "Heat pump",
+        "vs_h2": "Green hydrogen boiler",
+        "vs_chain": "From 100 kWh of renewable electricity:",
+        "vs_heat": "kWh of heat",
+        "vs_ratio": "For the same heat, hydrogen needs **{r} times** the energy of a heat pump.",
+        "vs_m_prim": "Primary energy", "vs_m_cost": "Annual cost", "vs_m_co2": "Emissions",
+        "vs_why_title": "Why the gap is so wide",
+        "vs_why": """
+        A heat pump does not produce heat: it **moves** it from the outside air into the
+        building, spending little electricity to do so. That is why its output exceeds 1.
+        
+        Hydrogen takes the opposite path, losing something at every step: electrolysis,
+        compression, storage, combustion. None of these steps can be skipped, and together they
+        consume roughly four fifths of the initial energy.
+                """,
+                "vs_when_title": "When hydrogen can still make sense",
+                "vs_when": """
+        - **Buildings where a heat pump cannot be installed**: heritage constraints, no room for
+          outdoor units, high-temperature radiator systems that cannot be replaced.
+        - **An existing gas network** to be converted, where avoided infrastructure cost partly
+          offsets the inefficiency.
+        - **Process heat above 100 °C**, beyond commercial heat pumps — but that leaves the scope
+          of this tool and belongs to 2.1.
+        - **Very high, concentrated power peaks**, where electrical sizing of the pump becomes
+          prohibitive.
+        
+        Outside these cases, using hydrogen for space heating diverts a scarce resource from
+        uses that have no alternative.
+        """,
         "sort_label": "Razvrsti rešitve po:",
         "sort_cost": "💶 Strošek", "sort_co2": "🌱 Emisije", "sort_eff": "⚡ Učinkovitost",
         "m_cost": "Letni strošek", "u_cost": "€/leto",
@@ -171,6 +313,24 @@ DEFAULT_FABBISOGNO, DEFAULT_LIFETIME, DEFAULT_COP = 10000, 20, 3.0
 # 3. STILE (coerente con gli altri tool H2READY)
 # ==========================================================================
 CSS = """
+.h4-vs { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:10px 0 4px 0; }
+.h4-vsc { border:1px solid rgba(127,127,127,.28); border-radius:13px; padding:16px 18px;
+          background:rgba(127,127,127,.07); border-top-width:5px; }
+.h4-vsc h5 { margin:0 0 12px 0; font-size:1.02rem; font-weight:700; }
+.h4-vs-big { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:2.5rem;
+             line-height:1.05; }
+.h4-vs-big small { font-size:.8rem; font-weight:500; opacity:.65; display:block;
+                   margin-top:2px; letter-spacing:.02em; }
+.h4-vs-chain { opacity:.62; font-size:.76rem; text-transform:uppercase;
+               letter-spacing:.04em; margin-bottom:6px; }
+.h4-vs-rows { margin-top:14px; border-top:1px solid rgba(127,127,127,.22); padding-top:11px; }
+.h4-vs-row { display:flex; justify-content:space-between; gap:10px; font-size:.85rem;
+             padding:3px 0; }
+.h4-vs-row b { font-family:'Space Grotesk',sans-serif; }
+.h4-verdict { background:rgba(163,59,74,.12); border:1px solid rgba(163,59,74,.38);
+              border-left:6px solid #A33B4A; border-radius:12px; padding:14px 18px;
+              margin:14px 0 4px 0; font-size:1.0rem; }
+@media (max-width:760px){ .h4-vs{ grid-template-columns:1fr; } }
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap');
 /* I testi NON impostano un colore: ereditano quello del tema Streamlit
@@ -290,9 +450,11 @@ st.title(_t["title"])
 st.markdown(f"<div class='h4-sub'>{_t['subtitle']}</div>", unsafe_allow_html=True)
 st.caption(_t["credits"])
 
-if os.path.exists("ReadMe_calore.md"):
-    with st.expander("ℹ️"):
+with st.expander(_t["scope_title"], expanded=False):
+    st.markdown(_t["scope_md"])
+    if os.path.exists("ReadMe_calore.md"):
         with open("ReadMe_calore.md", "r", encoding="utf-8") as fh:
+            st.markdown("---")
             st.markdown(fh.read())
 
 take = _t["takeaway"].format(
@@ -300,6 +462,59 @@ take = _t["takeaway"].format(
     clean=df.loc[idx_clean, "Nome"] + " · " + df.loc[idx_clean, "Vettore"], clean_v=fmt(df.loc[idx_clean, "Emiss"]),
 )
 st.markdown(f"<div class='h4-take'>{take}</div>", unsafe_allow_html=True)
+# --------------------------------------------------------------------------
+# CONFRONTO DIRETTO: le due strade che partono da elettricità rinnovabile.
+# La pompa di calore autoalimentata e la caldaia a idrogeno verde autoprodotto
+# usano la stessa risorsa: qui si misura quanta ne serve a ciascuna.
+# --------------------------------------------------------------------------
+r_pdc = df[(df["type"] == "heat_pump") & (df["vector"] == "elc_self")].iloc[0]
+r_h2 = df[(df["type"] == "boiler_h2") & (df["vector"] == "h2_green")].iloc[0]
+
+# Calore ottenibile da 100 kWh di elettricità rinnovabile, per ciascuna filiera.
+calore_pdc = user_fabbisogno / r_pdc["En_Primaria"] * 100
+calore_h2 = user_fabbisogno / r_h2["En_Primaria"] * 100
+rapporto = r_h2["En_Primaria"] / r_pdc["En_Primaria"]
+
+st.markdown(f"### {_t['vs_title']}")
+st.markdown(f"<div class='h4-sub'>{_t['vs_intro']}</div>", unsafe_allow_html=True)
+
+
+def _vs_card(titolo, colore, calore, riga):
+    righe = "".join(
+        f"<div class='h4-vs-row'><span>{lbl}</span><b>{val}</b></div>"
+        for lbl, val in [
+            (_t["vs_m_prim"], f"{fmt(riga['En_Primaria'])} {_t['u_prim']}"),
+            (_t["vs_m_cost"], f"{fmt(riga['Costo'])} {_t['u_cost']}"),
+            (_t["vs_m_co2"], f"{fmt(riga['Emiss'])} {_t['u_co2']}"),
+        ])
+    return (
+        f"<div class='h4-vsc' style='border-top-color:{colore}'>"
+        f"<h5>{titolo}</h5>"
+        f"<div class='h4-vs-chain'>{_t['vs_chain']}</div>"
+        f"<div class='h4-vs-big' style='color:{colore}'>{fmt(calore)}"
+        f"<small>{_t['vs_heat']}</small></div>"
+        f"<div class='h4-vs-rows'>{righe}</div></div>"
+    )
+
+
+st.markdown(
+    "<div class='h4-vs'>"
+    + _vs_card(f"♨️ {_t['vs_pdc']}", "#0D7C5C", calore_pdc, r_pdc)
+    + _vs_card(f"💧 {_t['vs_h2']}", "#A33B4A", calore_h2, r_h2)
+    + "</div>", unsafe_allow_html=True)
+
+st.markdown(f"<div class='h4-verdict'>{_t['vs_ratio'].format(r=f'{rapporto:.1f}'.replace('.', ','))}</div>",
+            unsafe_allow_html=True)
+
+cwhy, cwhen = st.columns(2)
+with cwhy:
+    st.markdown(f"**{_t['vs_why_title']}**")
+    st.markdown(_t["vs_why"])
+with cwhen:
+    st.markdown(f"**{_t['vs_when_title']}**")
+    st.markdown(_t["vs_when"])
+
+st.divider()
 
 # ==========================================================================
 # 8. CONTROLLO ORDINAMENTO + SCHEDE
