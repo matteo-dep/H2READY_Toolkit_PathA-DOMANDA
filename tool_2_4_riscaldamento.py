@@ -1,15 +1,24 @@
-import streamlit as st
-import pandas as pd
+"""
+H2READY TOOLKIT - Tool 2.4: Confronto sistemi di riscaldamento
+Progetto Interreg Italia-Slovenia H2READY - APE FVG
+Autore: Matteo De Piccoli
+
+Struttura della pagina, nell'ordine:
+  1. VERDETTO   - elettrico contro idrogeno, entrambi autoprodotti da rinnovabile
+  2. GAP        - distanza dalla caldaia a metano, in euro e in CO2
+  3. CONFRONTO  - valori assoluti di tutte le soluzioni, grafici e tabella
+  4. MACRO      - la stessa scelta ripetuta su piu' edifici
+  5. EXPORT     - trasmissione all'excelone
+"""
+
 import os
-import requests
 import json
+import requests
+import pandas as pd
+import streamlit as st
 
-# ==========================================================================
-# DSS COMUNI - Tool 2.4: Confronto sistemi di riscaldamento (H2 / Elc / FF)
-# Standalone (nessun Excel) + multilingua (IT/EN/SL) + veste grafica H2READY.
-# ==========================================================================
-
-st.set_page_config(page_title="H2READY · Tool 2.4 Riscaldamento", page_icon="🔥", layout="wide")
+st.set_page_config(page_title="H2READY · Tool 2.4 Riscaldamento",
+                   page_icon="🔥", layout="wide")
 
 # ==========================================================================
 # 1. LINGUA
@@ -21,73 +30,52 @@ LANG = LANG_OPTIONS[lang_choice]
 T = {
     "it": {
         "title": "🔥 Confronto sistemi di riscaldamento",
-        "subtitle": "Quanto costa e quanto inquina ogni modo di riscaldare un edificio, a parità di calore prodotto.",
+        "subtitle": "Quanto costa, quanto inquina e quanta energia serve per scaldare un edificio, a parità di calore prodotto.",
         "credits": "H2READY Toolkit · Tool 2.4 — sviluppato nel progetto [INTERREG H2Ready](https://www.ita-slo.eu/en/h2ready) da **Matteo De Piccoli - [APE FVG](https://www.ape.fvg.it/)**",
-        "case": "🎯 Il tuo caso",
-        "prices": "💶 Prezzi dei vettori energetici",
-        "fabbisogno": "Calore necessario all'anno [kWh]",
-        "fabbisogno_help": "L'energia termica che serve per scaldare l'edificio in un anno. Una casa media sta intorno a 10.000 kWh.",
-        "lifetime": "Durata dell'impianto [anni]",
-        "lifetime_help": "Per quanti anni l'impianto resterà in funzione. Si usa per distribuire il costo d'acquisto e le emissioni di costruzione.",
-        "cop": "Resa della pompa di calore (COP)",
-        "cop_help": "Quante unità di calore produce la pompa per ogni unità di elettricità. 3 significa 3 volte più efficiente di una stufa elettrica.",
-        "takeaway": "In questo scenario, la soluzione <b>più economica</b> è {cheap} (circa {cheap_v} €/anno) e quella <b>più pulita</b> è {clean} (circa {clean_v} kg CO₂/anno).",
-        "scope_title": "ℹ️ Che cosa confronta questo strumento (e che cosa no)",
+        "scope_title": "ℹ️ Che cosa confronta questo strumento",
         "scope_md": """
-        Il confronto è **a parità di calore consegnato all'edificio**: ogni soluzione viene
-        dimensionata per produrre lo stesso numero di kWh termici, così i costi e le emissioni
-        sono confrontabili fra loro.
+Il confronto è **a parità di calore consegnato**: ogni soluzione è dimensionata per
+produrre lo stesso numero di kWh termici. Ogni voce comprende acquisto ripartito sugli
+anni di vita, manutenzione, vettore energetico ed emissioni di filiera, camino e costruzione.
 
-        Ogni voce comprende l'acquisto dell'impianto ripartito sugli anni di vita, la
-        manutenzione, il vettore energetico, e le emissioni di filiera (WtT), di camino (TtW)
-        e di costruzione.
-        
-        **Non è compresa la legna a ciocchi.** È una scelta consapevole: costo ed emissioni
-        della biomassa legnosa in ciocchi dipendono da troppe variabili non generalizzabili —
-        umidità del legno al momento della combustione, provenienza e distanza di trasporto,
-        autoconsumo o acquisto, tipo di apparecchio e soprattutto la conduzione manuale, che
-        da sola può far variare il rendimento reale del doppio. Un valore medio sarebbe
-        arbitrario e darebbe una precisione che non esiste. Il **pellet** è invece incluso,
-        perché standardizzato per pezzatura, umidità e potere calorifico.
+**La legna a ciocchi non è compresa.** Costo ed emissioni dipendono da troppe variabili
+non generalizzabili: umidità del legno, distanza di trasporto, autoconsumo o acquisto,
+conduzione manuale. Il pellet è invece incluso perché standardizzato.
         """,
-        "vs_title": "⚡ contro 💧 — le due strade elettriche a confronto",
-        "vs_intro": "Pompa di calore e caldaia a idrogeno verde partono dalla stessa risorsa: elettricità rinnovabile. Cambia quanto ne serve.",
-        "vs_pdc": "Pompa di calore",
-        "vs_h2": "Caldaia a idrogeno verde",
-        "vs_chain": "Da 100 kWh di elettricità rinnovabile:",
-        "vs_heat": "kWh di calore",
-        "vs_ratio": "A parità di calore, l'idrogeno richiede **{r} volte** l'energia della pompa di calore.",
-        "vs_m_prim": "Energia primaria", "vs_m_cost": "Costo annuo", "vs_m_co2": "Emissioni",
-        "vs_why_title": "Perché la differenza è così grande",
-        "vs_why": """
-        La pompa di calore non produce calore: lo **sposta** dall'aria esterna dentro
-        l'edificio, e per farlo spende poca elettricità. È il motivo per cui rende più di 1.
-        
-        L'idrogeno percorre la strada opposta, e a ogni passaggio perde qualcosa: elettrolisi,
-        compressione, stoccaggio, combustione. Nessuno di questi passaggi è evitabile, e
-        sommati fanno sparire circa quattro quinti dell'energia di partenza.
-                """,
-                "vs_when_title": "Quando l'idrogeno può avere senso lo stesso",
-                "vs_when": """
-        - **Edifici dove la pompa di calore non è installabile**: vincoli su immobili storici,
-          assenza di spazio per le unità esterne, impianti a radiatori ad alta temperatura non
-          sostituibili.
-        - **Rete del gas già esistente** da riconvertire, dove il costo evitato di infrastruttura
-          compensa in parte l'inefficienza.
-        - **Calore di processo sopra i 100 °C**, fuori dalla portata delle pompe di calore
-          commerciali — ma allora si esce dall'ambito di questo strumento e si entra nel 2.1.
-        - **Picchi di potenza molto elevati e concentrati**, dove il dimensionamento elettrico
-          della pompa diventa proibitivo.
-        
-        Fuori da questi casi, destinare idrogeno al riscaldamento degli edifici sottrae una
-        risorsa scarsa agli usi dove non ha alternative.
-        """,
-        "sort_label": "Ordina le soluzioni per:",
-        "sort_cost": "💶 Costo", "sort_co2": "🌱 Emissioni", "sort_eff": "⚡ Efficienza",
-        "m_cost": "Costo annuo", "u_cost": "€/anno",
-        "m_co2": "Emissioni", "u_co2": "kg CO₂/anno",
-        "m_eff": "Efficienza (η / COP)",
-        "m_prim": "Energia primaria", "u_prim": "kWh/anno",
+        "case": "🎯 Il tuo caso", "prices": "💶 Prezzi dei vettori", "pv": "☀️ Fotovoltaico",
+        "macro_sb": "🏙️ Scala comunale",
+        "fabbisogno": "Calore necessario all'anno [kWh]",
+        "fabbisogno_help": "Energia termica per scaldare l'edificio in un anno. Una casa media sta sui 10.000 kWh.",
+        "lifetime": "Durata dell'impianto [anni]",
+        "cop": "Resa della pompa di calore (COP)",
+        "cop_help": "Unità di calore prodotte per ogni unità di elettricità.",
+        "pv_yield": "Producibilità FV [kWh/kWp/anno]",
+        "pv_yield_help": "In Friuli Venezia Giulia un impianto ben esposto sta fra 1.100 e 1.250.",
+        "pv_area": "Superficie per kWp [m²]",
+        "pv_area_help": "Moduli su tetto: circa 5 m²/kWp. A terra serve circa il doppio.",
+        "n_edifici": "Numero di edifici da convertire",
+        # --- verdetto ---
+        "v_title": "① Verdetto di fattibilità operativa",
+        "v_sub": "Pompa di calore e caldaia a idrogeno partono dalla stessa risorsa: elettricità rinnovabile autoprodotta. Cambia quanta ne serve, e quindi quanto impianto va costruito.",
+        "v_pdc": "Pompa di calore", "v_h2": "Caldaia a idrogeno verde",
+        "v_el": "Elettricità rinnovabile", "v_kwp": "Fotovoltaico da installare",
+        "v_area": "Superficie di moduli", "v_h2kg": "Idrogeno da produrre",
+        "v_ok": "**Praticabile.** Servono {a} m² di moduli fotovoltaici.",
+        "v_ko": "**Impraticabile nella pratica.** Per lo stesso calore servono {r} volte l'energia e {a} m² di moduli, contro {a2} m² della pompa di calore.",
+        "v_note": "La pompa di calore non produce calore: lo sposta dall'aria esterna, e per questo rende più di 1. L'idrogeno percorre la strada opposta e perde a ogni passaggio — elettrolisi, compressione, combustione.",
+        # --- gap ---
+        "g_title": "② Distanza dalla caldaia a metano",
+        "g_sub": "Quanto costa in più ogni soluzione rispetto al riferimento fossile, e quanta CO₂ evita in cambio.",
+        "g_ref": "Riferimento: caldaia a metano",
+        "g_dcost": "Differenza di costo", "g_dco2": "CO₂ evitata", "g_eur_ton": "Costo della CO₂ evitata",
+        "g_saves": "risparmia", "g_costs": "costa di più", "g_worse": "emette di più",
+        "g_na": "non evita emissioni",
+        "g_legend": "Sotto i 100 €/ton l'intervento regge il confronto con qualsiasi altra misura di decarbonizzazione. Sopra i 500 €/ton le stesse risorse rendono molto di più altrove.",
+        # --- confronto ---
+        "c_title": "③ Tutte le soluzioni a confronto",
+        "sort_label": "Ordina per:", "sort_cost": "💶 Costo", "sort_co2": "🌱 Emissioni", "sort_eff": "⚡ Efficienza",
+        "m_cost": "Costo annuo", "u_cost": "€/anno", "m_co2": "Emissioni", "u_co2": "kg CO₂/anno",
+        "m_eff": "Efficienza (η / COP)", "m_prim": "Energia primaria", "u_prim": "kWh/anno",
         "badge_cheap": "💶 più economico", "badge_clean": "🌱 più pulito",
         "detail": "📊 Da cosa derivano costi ed emissioni",
         "chart_cost": "Composizione del costo annuo [€/anno]",
@@ -96,7 +84,20 @@ T = {
         "leg_wtt": "Filiera (WtT)", "leg_ttw": "Camino (TtW)", "leg_constr": "Costruzione (divisa per gli anni)",
         "table": "📋 Tabella dati completa",
         "c_tech": "Soluzione", "c_prim": "Energia primaria", "c_eff": "η / COP", "c_em": "CO₂/anno", "c_cost": "Costo/anno",
-        "note": "💡 La lunghezza delle barre indica la grandezza relativa; il <b>colore</b> dice se è un bene (verde) o un problema (rosso). Per costo, emissioni ed energia: più corto è meglio. Per l'efficienza: più lungo è meglio.",
+        "note": "💡 La lunghezza delle barre indica la grandezza relativa; il colore dice se è un bene (verde) o un problema (rosso).",
+        # --- macro ---
+        "mm_title": "④ Analisi macro",
+        "mm_sub": "La stessa scelta ripetuta su {n} edifici dello stesso tipo.",
+        "mm_cost": "Costo annuo complessivo", "mm_co2": "CO₂ evitata complessiva",
+        "mm_el": "Elettricità rinnovabile necessaria", "mm_area": "Superficie fotovoltaica",
+        "mm_h2": "Idrogeno da produrre",
+        "mm_hint": "Il fabbisogno di idrogeno alla scala comunale è il dato che serve al percorso B (tool 2.5 e 2.6) per dimensionare la produzione.",
+        # --- export ---
+        "e_title": "💾 Esportazione", "e_id": "Codice identificativo del Comune (es. 030043):",
+        "e_btn": "💾 Esporta nel database centrale", "e_noid": "Inserisci il codice identificativo prima di procedere.",
+        "e_ok": "✅ Dati trasmessi correttamente.", "e_err": "Errore di sincronizzazione (codice {c})",
+        "e_conn": "Errore di connessione: {e}",
+        "e_timeout": "⏳ Il server non ha risposto in tempo. Quasi sempre significa che i dati sono stati scritti: controlla il foglio prima di ripetere l'invio.",
         "names": {"boiler_oil": "Caldaia a gasolio", "boiler_gas": "Caldaia a metano", "stove_pellet": "Stufa a pellet",
                   "heat_pump": "Pompa di calore", "boiler_h2": "Caldaia a idrogeno"},
         "vectors": {"oil": "Gasolio", "ch4": "Metano", "pellet": "Pellet", "elc_grid": "Elettricità di rete",
@@ -107,69 +108,49 @@ T = {
     },
     "en": {
         "title": "🔥 Heating systems comparison",
-        "subtitle": "How much each way of heating a building costs and pollutes, for the same amount of heat delivered.",
+        "subtitle": "Cost, emissions and energy needed to heat a building, at equal heat delivered.",
         "credits": "H2READY Toolkit · Tool 2.4 — developed within the [INTERREG H2Ready](https://www.ita-slo.eu/en/h2ready) project by **Matteo De Piccoli - [APE FVG](https://www.ape.fvg.it/)**",
-        "case": "🎯 Your case",
-        "prices": "💶 Energy carrier prices",
-        "fabbisogno": "Heat needed per year [kWh]",
-        "fabbisogno_help": "The thermal energy needed to heat the building in one year. An average home is around 10,000 kWh.",
-        "lifetime": "System lifetime [years]",
-        "lifetime_help": "How many years the system will run. Used to spread the purchase cost and construction emissions.",
-        "cop": "Heat pump performance (COP)",
-        "cop_help": "How many units of heat the pump produces per unit of electricity. 3 means 3× more efficient than an electric heater.",
-        "takeaway": "In this scenario, the <b>cheapest</b> option is {cheap} (about {cheap_v} €/yr) and the <b>cleanest</b> is {clean} (about {clean_v} kg CO₂/yr).",
-        "scope_title": "ℹ️ What this tool compares (and what it does not)",
+        "scope_title": "ℹ️ What this tool compares",
         "scope_md": """
-        The comparison is made **at equal heat delivered to the building**: every option is
-        sized to produce the same number of thermal kWh, so costs and emissions are comparable.
-        
-        Each entry includes the purchase cost spread over the system lifetime, maintenance, the
-        energy carrier, and supply-chain (WtT), stack (TtW) and construction emissions.
-        
-        **Firewood logs are not included.** This is deliberate: cost and emissions of log wood
-        depend on too many variables that cannot be generalised — moisture at the moment of
-        combustion, origin and transport distance, self-supply or purchase, appliance type and
-        above all manual operation, which alone can halve or double real efficiency. An average
-        figure would be arbitrary. **Pellet is included**, being standardised in size, moisture
-        and calorific value.
+The comparison is made **at equal heat delivered**: every option is sized to produce the
+same thermal kWh. Each entry includes purchase spread over lifetime, maintenance, energy
+carrier, and supply-chain, stack and construction emissions.
+
+**Firewood logs are excluded.** Cost and emissions depend on too many variables that
+cannot be generalised: moisture, transport distance, self-supply, manual operation.
+Pellet is included, being standardised.
         """,
-        "vs_title": "⚡ vs 💧 — the two electric routes side by side",
-        "vs_intro": "Heat pump and green hydrogen boiler start from the same resource: renewable electricity. What differs is how much of it is needed.",
-        "vs_pdc": "Heat pump",
-        "vs_h2": "Green hydrogen boiler",
-        "vs_chain": "From 100 kWh of renewable electricity:",
-        "vs_heat": "kWh of heat",
-        "vs_ratio": "For the same heat, hydrogen needs **{r} times** the energy of a heat pump.",
-        "vs_m_prim": "Primary energy", "vs_m_cost": "Annual cost", "vs_m_co2": "Emissions",
-        "vs_why_title": "Why the gap is so wide",
-        "vs_why": """
-        A heat pump does not produce heat: it **moves** it from the outside air into the
-        building, spending little electricity to do so. That is why its output exceeds 1.
-        
-        Hydrogen takes the opposite path, losing something at every step: electrolysis,
-        compression, storage, combustion. None of these steps can be skipped, and together they
-        consume roughly four fifths of the initial energy.
-                """,
-                "vs_when_title": "When hydrogen can still make sense",
-                "vs_when": """
-        - **Buildings where a heat pump cannot be installed**: heritage constraints, no room for
-          outdoor units, high-temperature radiator systems that cannot be replaced.
-        - **An existing gas network** to be converted, where avoided infrastructure cost partly
-          offsets the inefficiency.
-        - **Process heat above 100 °C**, beyond commercial heat pumps — but that leaves the scope
-          of this tool and belongs to 2.1.
-        - **Very high, concentrated power peaks**, where electrical sizing of the pump becomes
-          prohibitive.
-        
-        Outside these cases, using hydrogen for space heating diverts a scarce resource from
-        uses that have no alternative.
-        """,
-        "sort_label": "Sort the options by:",
-        "sort_cost": "💶 Cost", "sort_co2": "🌱 Emissions", "sort_eff": "⚡ Efficiency",
-        "m_cost": "Annual cost", "u_cost": "€/yr",
-        "m_co2": "Emissions", "u_co2": "kg CO₂/yr",
-        "m_eff": "Efficiency (η / COP)",
-        "m_prim": "Primary energy", "u_prim": "kWh/yr",
+        "case": "🎯 Your case", "prices": "💶 Carrier prices", "pv": "☀️ Photovoltaics",
+        "macro_sb": "🏙️ Municipal scale",
+        "fabbisogno": "Heat needed per year [kWh]",
+        "fabbisogno_help": "Thermal energy to heat the building for one year. An average home is around 10,000 kWh.",
+        "lifetime": "System lifetime [years]",
+        "cop": "Heat pump performance (COP)",
+        "cop_help": "Units of heat produced per unit of electricity.",
+        "pv_yield": "PV yield [kWh/kWp/year]",
+        "pv_yield_help": "In Friuli Venezia Giulia a well-oriented system delivers 1,100–1,250.",
+        "pv_area": "Area per kWp [m²]",
+        "pv_area_help": "Rooftop modules: about 5 m²/kWp. Ground-mounted needs roughly double.",
+        "n_edifici": "Number of buildings to convert",
+        "v_title": "① Operational feasibility verdict",
+        "v_sub": "Heat pump and hydrogen boiler start from the same resource: self-produced renewable electricity. What differs is how much is needed, and therefore how much plant must be built.",
+        "v_pdc": "Heat pump", "v_h2": "Green hydrogen boiler",
+        "v_el": "Renewable electricity", "v_kwp": "PV to be installed",
+        "v_area": "Module area", "v_h2kg": "Hydrogen to produce",
+        "v_ok": "**Feasible.** It takes {a} m² of PV modules.",
+        "v_ko": "**Not feasible in practice.** For the same heat it takes {r} times the energy and {a} m² of modules, against {a2} m² for the heat pump.",
+        "v_note": "A heat pump does not produce heat: it moves it from outside air, which is why its output exceeds 1. Hydrogen takes the opposite path and loses at every step — electrolysis, compression, combustion.",
+        "g_title": "② Distance from the gas boiler",
+        "g_sub": "How much more each option costs against the fossil reference, and how much CO₂ it avoids in return.",
+        "g_ref": "Reference: natural gas boiler",
+        "g_dcost": "Cost difference", "g_dco2": "CO₂ avoided", "g_eur_ton": "Cost of avoided CO₂",
+        "g_saves": "saves", "g_costs": "costs more", "g_worse": "emits more",
+        "g_na": "avoids no emissions",
+        "g_legend": "Below €100/ton the measure stands comparison with any other decarbonisation option. Above €500/ton the same resources deliver far more elsewhere.",
+        "c_title": "③ All options compared",
+        "sort_label": "Sort by:", "sort_cost": "💶 Cost", "sort_co2": "🌱 Emissions", "sort_eff": "⚡ Efficiency",
+        "m_cost": "Annual cost", "u_cost": "€/yr", "m_co2": "Emissions", "u_co2": "kg CO₂/yr",
+        "m_eff": "Efficiency (η / COP)", "m_prim": "Primary energy", "u_prim": "kWh/yr",
         "badge_cheap": "💶 cheapest", "badge_clean": "🌱 cleanest",
         "detail": "📊 Where costs and emissions come from",
         "chart_cost": "Annual cost breakdown [€/yr]",
@@ -178,7 +159,18 @@ T = {
         "leg_wtt": "Supply chain (WtT)", "leg_ttw": "Stack (TtW)", "leg_constr": "Construction (spread over years)",
         "table": "📋 Full data table",
         "c_tech": "Option", "c_prim": "Primary energy", "c_eff": "η / COP", "c_em": "CO₂/yr", "c_cost": "Cost/yr",
-        "note": "💡 Bar length shows the relative size; the <b>colour</b> tells whether it's good (green) or a problem (red). For cost, emissions and energy: shorter is better. For efficiency: longer is better.",
+        "note": "💡 Bar length shows relative size; colour tells whether it is good (green) or a problem (red).",
+        "mm_title": "④ Macro analysis",
+        "mm_sub": "The same choice repeated across {n} buildings of the same type.",
+        "mm_cost": "Total annual cost", "mm_co2": "Total CO₂ avoided",
+        "mm_el": "Renewable electricity needed", "mm_area": "PV area",
+        "mm_h2": "Hydrogen to produce",
+        "mm_hint": "Municipal hydrogen demand is the figure that pathway B (tools 2.5 and 2.6) needs to size production.",
+        "e_title": "💾 Export", "e_id": "Municipality identifier code (e.g. 030043):",
+        "e_btn": "💾 Export to central database", "e_noid": "Enter the identifier code before proceeding.",
+        "e_ok": "✅ Data transmitted successfully.", "e_err": "Synchronisation error (code {c})",
+        "e_conn": "Connection error: {e}",
+        "e_timeout": "⏳ The server did not answer in time. This usually means the data was written: check the sheet before resending.",
         "names": {"boiler_oil": "Oil boiler", "boiler_gas": "Gas boiler", "stove_pellet": "Pellet stove",
                   "heat_pump": "Heat pump", "boiler_h2": "Hydrogen boiler"},
         "vectors": {"oil": "Oil", "ch4": "Gas", "pellet": "Pellet", "elc_grid": "Grid electricity",
@@ -189,69 +181,49 @@ T = {
     },
     "sl": {
         "title": "🔥 Primerjava ogrevalnih sistemov",
-        "subtitle": "Koliko stane in koliko onesnažuje vsak način ogrevanja stavbe ob enaki količini toplote.",
+        "subtitle": "Strošek, emisije in potrebna energija za ogrevanje stavbe ob enaki dobavljeni toploti.",
         "credits": "H2READY Toolkit · Orodje 2.4 — razvito v projektu [INTERREG H2Ready](https://www.ita-slo.eu/en/h2ready), avtor **Matteo De Piccoli - [APE FVG](https://www.ape.fvg.it/)**",
-        "case": "🎯 Vaš primer",
-        "prices": "💶 Cene energentov",
-        "fabbisogno": "Potrebna toplota na leto [kWh]",
-        "fabbisogno_help": "Toplotna energija za ogrevanje stavbe v enem letu. Povprečna hiša znaša okoli 10.000 kWh.",
-        "lifetime": "Življenjska doba sistema [leta]",
-        "lifetime_help": "Koliko let bo sistem deloval. Uporablja se za porazdelitev nabavne cene in emisij izdelave.",
-        "cop": "Učinkovitost toplotne črpalke (COP)",
-        "cop_help": "Koliko enot toplote črpalka proizvede na enoto elektrike. 3 pomeni 3× bolj učinkovito od električnega grelnika.",
-        "takeaway": "V tem scenariju je <b>najcenejša</b> rešitev {cheap} (približno {cheap_v} €/leto), <b>najčistejša</b> pa {clean} (približno {clean_v} kg CO₂/leto).",
-        "scope_title": "ℹ️ What this tool compares (and what it does not)",
+        "scope_title": "ℹ️ Kaj to orodje primerja",
         "scope_md": """
-        The comparison is made **at equal heat delivered to the building**: every option is
-        sized to produce the same number of thermal kWh, so costs and emissions are comparable.
-        
-        Each entry includes the purchase cost spread over the system lifetime, maintenance, the
-        energy carrier, and supply-chain (WtT), stack (TtW) and construction emissions.
-        
-        **Firewood logs are not included.** This is deliberate: cost and emissions of log wood
-        depend on too many variables that cannot be generalised — moisture at the moment of
-        combustion, origin and transport distance, self-supply or purchase, appliance type and
-        above all manual operation, which alone can halve or double real efficiency. An average
-        figure would be arbitrary. **Pellet is included**, being standardised in size, moisture
-        and calorific value.
+Primerjava poteka **ob enaki dobavljeni toploti**: vsaka rešitev je dimenzionirana za
+enako količino toplotnih kWh. Vsaka postavka vključuje nabavo, porazdeljeno na leta,
+vzdrževanje, energent ter emisije dobavne verige, dimnika in izdelave.
+
+**Polena niso vključena.** Strošek in emisije so odvisni od preveč spremenljivk:
+vlažnost, razdalja prevoza, lastna oskrba, ročno upravljanje. Peleti so vključeni, ker
+so standardizirani.
         """,
-        "vs_title": "⚡ vs 💧 — the two electric routes side by side",
-        "vs_intro": "Heat pump and green hydrogen boiler start from the same resource: renewable electricity. What differs is how much of it is needed.",
-        "vs_pdc": "Heat pump",
-        "vs_h2": "Green hydrogen boiler",
-        "vs_chain": "From 100 kWh of renewable electricity:",
-        "vs_heat": "kWh of heat",
-        "vs_ratio": "For the same heat, hydrogen needs **{r} times** the energy of a heat pump.",
-        "vs_m_prim": "Primary energy", "vs_m_cost": "Annual cost", "vs_m_co2": "Emissions",
-        "vs_why_title": "Why the gap is so wide",
-        "vs_why": """
-        A heat pump does not produce heat: it **moves** it from the outside air into the
-        building, spending little electricity to do so. That is why its output exceeds 1.
-        
-        Hydrogen takes the opposite path, losing something at every step: electrolysis,
-        compression, storage, combustion. None of these steps can be skipped, and together they
-        consume roughly four fifths of the initial energy.
-                """,
-                "vs_when_title": "When hydrogen can still make sense",
-                "vs_when": """
-        - **Buildings where a heat pump cannot be installed**: heritage constraints, no room for
-          outdoor units, high-temperature radiator systems that cannot be replaced.
-        - **An existing gas network** to be converted, where avoided infrastructure cost partly
-          offsets the inefficiency.
-        - **Process heat above 100 °C**, beyond commercial heat pumps — but that leaves the scope
-          of this tool and belongs to 2.1.
-        - **Very high, concentrated power peaks**, where electrical sizing of the pump becomes
-          prohibitive.
-        
-        Outside these cases, using hydrogen for space heating diverts a scarce resource from
-        uses that have no alternative.
-        """,
-        "sort_label": "Razvrsti rešitve po:",
-        "sort_cost": "💶 Strošek", "sort_co2": "🌱 Emisije", "sort_eff": "⚡ Učinkovitost",
-        "m_cost": "Letni strošek", "u_cost": "€/leto",
-        "m_co2": "Emisije", "u_co2": "kg CO₂/leto",
-        "m_eff": "Učinkovitost (η / COP)",
-        "m_prim": "Primarna energija", "u_prim": "kWh/leto",
+        "case": "🎯 Vaš primer", "prices": "💶 Cene energentov", "pv": "☀️ Fotovoltaika",
+        "macro_sb": "🏙️ Občinska raven",
+        "fabbisogno": "Potrebna toplota na leto [kWh]",
+        "fabbisogno_help": "Toplotna energija za ogrevanje stavbe v enem letu. Povprečna hiša okoli 10.000 kWh.",
+        "lifetime": "Življenjska doba sistema [leta]",
+        "cop": "Učinkovitost toplotne črpalke (COP)",
+        "cop_help": "Enote toplote na enoto elektrike.",
+        "pv_yield": "Donos FV [kWh/kWp/leto]",
+        "pv_yield_help": "V Furlaniji-Julijski krajini dobro usmerjen sistem doseže 1.100–1.250.",
+        "pv_area": "Površina na kWp [m²]",
+        "pv_area_help": "Strešni moduli: okoli 5 m²/kWp. Na tleh približno dvakrat toliko.",
+        "n_edifici": "Število stavb za pretvorbo",
+        "v_title": "① Sodba o operativni izvedljivosti",
+        "v_sub": "Toplotna črpalka in vodikov kotel izhajata iz istega vira: lastne obnovljive elektrike. Razlikuje se količina in s tem obseg naprav, ki jih je treba zgraditi.",
+        "v_pdc": "Toplotna črpalka", "v_h2": "Kotel na zeleni vodik",
+        "v_el": "Obnovljiva elektrika", "v_kwp": "FV za namestitev",
+        "v_area": "Površina modulov", "v_h2kg": "Vodik za proizvodnjo",
+        "v_ok": "**Izvedljivo.** Potrebnih je {a} m² fotovoltaičnih modulov.",
+        "v_ko": "**V praksi neizvedljivo.** Za enako toploto je potrebno {r}-krat več energije in {a} m² modulov, proti {a2} m² pri toplotni črpalki.",
+        "v_note": "Toplotna črpalka toplote ne proizvaja: prenaša jo iz zunanjega zraka, zato je njen izkoristek večji od 1. Vodik ubere nasprotno pot in izgublja na vsakem koraku — elektroliza, stiskanje, zgorevanje.",
+        "g_title": "② Razlika glede na plinski kotel",
+        "g_sub": "Koliko več stane vsaka rešitev v primerjavi s fosilnim izhodiščem in koliko CO₂ v zameno prihrani.",
+        "g_ref": "Izhodišče: plinski kotel",
+        "g_dcost": "Razlika v strošku", "g_dco2": "Prihranjen CO₂", "g_eur_ton": "Strošek prihranjenega CO₂",
+        "g_saves": "prihrani", "g_costs": "stane več", "g_worse": "oddaja več",
+        "g_na": "ne prihrani emisij",
+        "g_legend": "Pod 100 €/tono ukrep vzdrži primerjavo s katerim koli drugim razogljičenjem. Nad 500 €/tono ista sredstva drugje prinesejo veliko več.",
+        "c_title": "③ Primerjava vseh rešitev",
+        "sort_label": "Razvrsti po:", "sort_cost": "💶 Strošek", "sort_co2": "🌱 Emisije", "sort_eff": "⚡ Učinkovitost",
+        "m_cost": "Letni strošek", "u_cost": "€/leto", "m_co2": "Emisije", "u_co2": "kg CO₂/leto",
+        "m_eff": "Učinkovitost (η / COP)", "m_prim": "Primarna energija", "u_prim": "kWh/leto",
         "badge_cheap": "💶 najcenejše", "badge_clean": "🌱 najčistejše",
         "detail": "📊 Od kod izhajajo stroški in emisije",
         "chart_cost": "Sestava letnega stroška [€/leto]",
@@ -260,7 +232,18 @@ T = {
         "leg_wtt": "Dobavna veriga (WtT)", "leg_ttw": "Dimnik (TtW)", "leg_constr": "Izdelava (porazdeljena na leta)",
         "table": "📋 Celotna tabela podatkov",
         "c_tech": "Rešitev", "c_prim": "Primarna energija", "c_eff": "η / COP", "c_em": "CO₂/leto", "c_cost": "Strošek/leto",
-        "note": "💡 Dolžina stolpcev prikazuje relativno velikost; <b>barva</b> pove, ali je dobro (zeleno) ali težava (rdeče). Za strošek, emisije in energijo: krajše je bolje. Za učinkovitost: daljše je bolje.",
+        "note": "💡 Dolžina stolpcev prikazuje relativno velikost; barva pove, ali je dobro (zeleno) ali težava (rdeče).",
+        "mm_title": "④ Makro analiza",
+        "mm_sub": "Enaka izbira, ponovljena na {n} stavbah iste vrste.",
+        "mm_cost": "Skupni letni strošek", "mm_co2": "Skupni prihranjeni CO₂",
+        "mm_el": "Potrebna obnovljiva elektrika", "mm_area": "Površina FV",
+        "mm_h2": "Vodik za proizvodnjo",
+        "mm_hint": "Občinsko povpraševanje po vodiku je podatek, ki ga pot B (orodji 2.5 in 2.6) potrebuje za dimenzioniranje proizvodnje.",
+        "e_title": "💾 Izvoz", "e_id": "Identifikacijska koda občine (npr. 030043):",
+        "e_btn": "💾 Izvozi v osrednjo bazo", "e_noid": "Pred nadaljevanjem vnesite identifikacijsko kodo.",
+        "e_ok": "✅ Podatki uspešno poslani.", "e_err": "Napaka sinhronizacije (koda {c})",
+        "e_conn": "Napaka povezave: {e}",
+        "e_timeout": "⏳ Strežnik ni odgovoril pravočasno. Običajno to pomeni, da so podatki zapisani: preverite preglednico, preden ponovite pošiljanje.",
         "names": {"boiler_oil": "Oljni kotel", "boiler_gas": "Plinski kotel", "stove_pellet": "Peletna peč",
                   "heat_pump": "Toplotna črpalka", "boiler_h2": "Vodikov kotel"},
         "vectors": {"oil": "Olje", "ch4": "Plin", "pellet": "Pelet", "elc_grid": "Omrežna elektrika",
@@ -273,19 +256,22 @@ T = {
 _t = T[LANG]
 
 # ==========================================================================
-# 2. DATI INCORPORATI (dal foglio CALORE - fabbisogno base 10.000 kWh/y)
+# 2. DATI INCORPORATI (fabbisogno base 10.000 kWh/anno)
 # ==========================================================================
-ICONS = {"boiler_oil": "🛢️", "boiler_gas": "🔥", "stove_pellet": "🪵", "heat_pump": "♨️", "boiler_h2": "💧"}
+ICONS = {"boiler_oil": "🛢️", "boiler_gas": "🔥", "stove_pellet": "🪵",
+         "heat_pump": "♨️", "boiler_h2": "💧"}
+
+LHV_H2 = 33.33  # kWh per kg di idrogeno
 
 TECHNOLOGIES = [
-    {"type": "boiler_oil",  "vector": "oil",      "eta_cop": 0.9, "consumo_base": 11111.111111, "en_prim_base": 12771.392082, "wtt_base": 444.305319,  "ttw_base": 2962.035457, "constr": 1200, "maint": 225.0,      "capex": 3500,  "fuel_key": "diesel",        "is_pdc": False},
-    {"type": "boiler_gas",  "vector": "ch4",      "eta_cop": 1.0, "consumo_base": 10000.000000, "en_prim_base": 10989.010989, "wtt_base": 575.000000,  "ttw_base": 2050.000000, "constr": 950,  "maint": 200.0,      "capex": 2750,  "fuel_key": "metano",        "is_pdc": False},
-    {"type": "stove_pellet","vector": "pellet",   "eta_cop": 0.9, "consumo_base": 11111.111111, "en_prim_base": 13071.895425, "wtt_base": 422.222222,  "ttw_base": 0.000000,    "constr": 650,  "maint": 300.0,      "capex": 3000,  "fuel_key": "pellet",        "is_pdc": False},
-    {"type": "heat_pump",   "vector": "elc_grid", "eta_cop": 3.0, "consumo_base": 3333.333333,  "en_prim_base": 6666.666667,  "wtt_base": 716.666667,  "ttw_base": 0.000000,    "constr": 1400, "maint": 150.0,      "capex": 11500, "fuel_key": "elc_rete",      "is_pdc": True},
-    {"type": "heat_pump",   "vector": "elc_self", "eta_cop": 3.0, "consumo_base": 3333.333333,  "en_prim_base": 3703.703704,  "wtt_base": 183.333333,  "ttw_base": 0.000000,    "constr": 1400, "maint": 150.0,      "capex": 11500, "fuel_key": "elc_auto",      "is_pdc": True},
-    {"type": "boiler_h2",   "vector": "h2_grey",  "eta_cop": 0.9, "consumo_base": 11111.111111, "en_prim_base": 15873.015873, "wtt_base": 3667.033370, "ttw_base": 0.000000,    "constr": 1200, "maint": 509.090909, "capex": 7000,  "fuel_key": "h2_grigio",     "is_pdc": False},
-    {"type": "boiler_h2",   "vector": "h2_grid",  "eta_cop": 0.9, "consumo_base": 11111.111111, "en_prim_base": 40404.040404, "wtt_base": 4300.430043, "ttw_base": 0.000000,    "constr": 1200, "maint": 509.090909, "capex": 7000,  "fuel_key": "h2_rete",       "is_pdc": False},
-    {"type": "boiler_h2",   "vector": "h2_green", "eta_cop": 0.9, "consumo_base": 11111.111111, "en_prim_base": 17921.146953, "wtt_base": 1000.100010, "ttw_base": 0.000000,    "constr": 1200, "maint": 509.090909, "capex": 7000,  "fuel_key": "h2_verde_auto", "is_pdc": False},
+    {"type": "boiler_oil",   "vector": "oil",      "eta_cop": 0.9, "consumo_base": 11111.111111, "en_prim_base": 12771.392082, "wtt_base": 444.305319,  "ttw_base": 2962.035457, "constr": 1200, "maint": 225.0,      "capex": 3500,  "fuel_key": "diesel",        "is_pdc": False},
+    {"type": "boiler_gas",   "vector": "ch4",      "eta_cop": 1.0, "consumo_base": 10000.000000, "en_prim_base": 10989.010989, "wtt_base": 575.000000,  "ttw_base": 2050.000000, "constr": 950,  "maint": 200.0,      "capex": 2750,  "fuel_key": "metano",        "is_pdc": False},
+    {"type": "stove_pellet", "vector": "pellet",   "eta_cop": 0.9, "consumo_base": 11111.111111, "en_prim_base": 13071.895425, "wtt_base": 422.222222,  "ttw_base": 0.000000,    "constr": 650,  "maint": 300.0,      "capex": 3000,  "fuel_key": "pellet",        "is_pdc": False},
+    {"type": "heat_pump",    "vector": "elc_grid", "eta_cop": 3.0, "consumo_base": 3333.333333,  "en_prim_base": 6666.666667,  "wtt_base": 716.666667,  "ttw_base": 0.000000,    "constr": 1400, "maint": 150.0,      "capex": 11500, "fuel_key": "elc_rete",      "is_pdc": True},
+    {"type": "heat_pump",    "vector": "elc_self", "eta_cop": 3.0, "consumo_base": 3333.333333,  "en_prim_base": 3703.703704,  "wtt_base": 183.333333,  "ttw_base": 0.000000,    "constr": 1400, "maint": 150.0,      "capex": 11500, "fuel_key": "elc_auto",      "is_pdc": True},
+    {"type": "boiler_h2",    "vector": "h2_grey",  "eta_cop": 0.9, "consumo_base": 11111.111111, "en_prim_base": 15873.015873, "wtt_base": 3667.033370, "ttw_base": 0.000000,    "constr": 1200, "maint": 509.090909, "capex": 7000,  "fuel_key": "h2_grigio",     "is_pdc": False},
+    {"type": "boiler_h2",    "vector": "h2_grid",  "eta_cop": 0.9, "consumo_base": 11111.111111, "en_prim_base": 40404.040404, "wtt_base": 4300.430043, "ttw_base": 0.000000,    "constr": 1200, "maint": 509.090909, "capex": 7000,  "fuel_key": "h2_rete",       "is_pdc": False},
+    {"type": "boiler_h2",    "vector": "h2_green", "eta_cop": 0.9, "consumo_base": 11111.111111, "en_prim_base": 17921.146953, "wtt_base": 1000.100010, "ttw_base": 0.000000,    "constr": 1200, "maint": 509.090909, "capex": 7000,  "fuel_key": "h2_verde_auto", "is_pdc": False},
 ]
 
 FUELS = {
@@ -298,67 +284,48 @@ FUELS = {
     "h2_rete":       {"natura": 20.0, "factor": 0.03000300030003},
     "h2_verde_auto": {"natura": 15.0, "factor": 0.03000300030003},
 }
-FUEL_UNITS = {"diesel": {"it": "€/l", "en": "€/l", "sl": "€/l"},
-              "metano": {"it": "€/Sm³", "en": "€/Sm³", "sl": "€/Sm³"},
-              "pellet": {"it": "€/sacco", "en": "€/bag", "sl": "€/vreča"},
-              "elc_rete": {"it": "€/kWh", "en": "€/kWh", "sl": "€/kWh"},
-              "elc_auto": {"it": "€/kWh", "en": "€/kWh", "sl": "€/kWh"},
-              "h2_grigio": {"it": "€/kg", "en": "€/kg", "sl": "€/kg"},
-              "h2_rete": {"it": "€/kg", "en": "€/kg", "sl": "€/kg"},
-              "h2_verde_auto": {"it": "€/kg", "en": "€/kg", "sl": "€/kg"}}
-
-DEFAULT_FABBISOGNO, DEFAULT_LIFETIME, DEFAULT_COP = 10000, 20, 3.0
+FUEL_UNITS = {"diesel": "€/l", "metano": "€/Sm³", "pellet": "€/sacco",
+              "elc_rete": "€/kWh", "elc_auto": "€/kWh",
+              "h2_grigio": "€/kg", "h2_rete": "€/kg", "h2_verde_auto": "€/kg"}
 
 # ==========================================================================
-# 3. STILE (coerente con gli altri tool H2READY)
+# 3. STILE
 # ==========================================================================
 CSS = """
-.h4-vs { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:10px 0 4px 0; }
-.h4-vsc { border:1px solid rgba(127,127,127,.28); border-radius:13px; padding:16px 18px;
-          background:rgba(127,127,127,.07); border-top-width:5px; }
-.h4-vsc h5 { margin:0 0 12px 0; font-size:1.02rem; font-weight:700; }
-.h4-vs-big { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:2.5rem;
-             line-height:1.05; }
-.h4-vs-big small { font-size:.8rem; font-weight:500; opacity:.65; display:block;
-                   margin-top:2px; letter-spacing:.02em; }
-.h4-vs-chain { opacity:.62; font-size:.76rem; text-transform:uppercase;
-               letter-spacing:.04em; margin-bottom:6px; }
-.h4-vs-rows { margin-top:14px; border-top:1px solid rgba(127,127,127,.22); padding-top:11px; }
-.h4-vs-row { display:flex; justify-content:space-between; gap:10px; font-size:.85rem;
-             padding:3px 0; }
-.h4-vs-row b { font-family:'Space Grotesk',sans-serif; }
-.h4-verdict { background:rgba(163,59,74,.12); border:1px solid rgba(163,59,74,.38);
-              border-left:6px solid #A33B4A; border-radius:12px; padding:14px 18px;
-              margin:14px 0 4px 0; font-size:1.0rem; }
-@media (max-width:760px){ .h4-vs{ grid-template-columns:1fr; } }
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap');
-/* I testi NON impostano un colore: ereditano quello del tema Streamlit
-   (scuro su tema chiaro, chiaro su tema scuro). I "tenui" usano l'opacità. */
-.h4-sub { opacity:.7; font-size:0.96rem; margin:-4px 0 2px 0; }
-.h4-take { display:flex; flex-wrap:wrap; gap:14px; background:rgba(13,124,92,.13);
-           border:1px solid rgba(13,124,92,.40); border-left:6px solid #0D7C5C; border-radius:12px;
-           padding:14px 18px; margin:14px 0 6px 0; font-size:0.98rem; }
+.h4-sub { opacity:.7; font-size:0.96rem; margin:-4px 0 10px 0; }
 .h4-note { opacity:.6; font-size:0.8rem; margin:10px 0 2px 0; }
 .h4-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:14px; margin-top:8px; }
 .h4c { background:rgba(127,127,127,.10); border:1px solid rgba(127,127,127,.26);
-       border-left-width:6px; border-radius:13px; padding:15px 17px 14px 17px; box-shadow:0 1px 2px rgba(0,0,0,.10); }
+       border-left-width:6px; border-radius:13px; padding:15px 17px 14px 17px; }
 .h4c-top { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:12px; }
 .h4c-name { font-weight:700; font-size:1.04rem; line-height:1.2; }
 .h4c-name .ic { margin-right:6px; }
 .h4c-tags { display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex:0 0 auto; }
 .h4c-vchip { font-size:.7rem; background:rgba(127,127,127,.16); border:1px solid rgba(127,127,127,.30);
              border-radius:6px; padding:2px 8px; white-space:nowrap; opacity:.92; }
-.h4c-badge { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:.66rem; letter-spacing:.04em; text-transform:uppercase;
-             color:#fff; padding:3px 8px; border-radius:6px; white-space:nowrap; }
+.h4c-badge { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:.66rem; letter-spacing:.04em;
+             text-transform:uppercase; color:#fff; padding:3px 8px; border-radius:6px; white-space:nowrap; }
 .h4c-metrics { display:grid; grid-template-columns:1fr 1fr; gap:11px 16px; }
 .h4m-head { display:flex; justify-content:space-between; align-items:baseline; gap:6px; margin-bottom:4px; }
 .h4m-lbl { font-size:.72rem; opacity:.6; text-transform:uppercase; letter-spacing:.03em; }
 .h4m-val { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:1.0rem; }
 .h4m-bar { height:7px; border-radius:5px; background:rgba(127,127,127,.20); overflow:hidden; }
 .h4m-fill { height:100%; border-radius:5px; }
-@media (max-width:560px){ .h4c-metrics{ grid-template-columns:1fr; } }
-.h4-bd-title { font-weight:700; font-size:0.98rem; margin:16px 0 8px 0; }
+/* verdetto */
+.h4-vs { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:6px 0; }
+.h4-vsc { border:1px solid rgba(127,127,127,.28); border-radius:13px; padding:16px 18px;
+          background:rgba(127,127,127,.07); border-top-width:5px; }
+.h4-vsc h5 { margin:0 0 10px 0; font-size:1.02rem; font-weight:700; }
+.h4-vs-row { display:flex; justify-content:space-between; gap:10px; font-size:.86rem; padding:4px 0;
+             border-bottom:1px solid rgba(127,127,127,.14); }
+.h4-vs-row:last-child { border-bottom:none; }
+.h4-vs-row b { font-family:'Space Grotesk',sans-serif; font-size:.95rem; }
+.h4-verdict { border-radius:12px; padding:14px 18px; margin:12px 0 4px 0; font-size:1.0rem; }
+.h4-vd-ko { background:rgba(163,59,74,.12); border:1px solid rgba(163,59,74,.38); border-left:6px solid #A33B4A; }
+.h4-vd-ok { background:rgba(13,124,92,.13); border:1px solid rgba(13,124,92,.40); border-left:6px solid #0D7C5C; }
+/* barre composizione */
 .h4-leg { display:flex; flex-wrap:wrap; gap:14px; margin-bottom:12px; }
 .h4-leg span { display:flex; align-items:center; gap:6px; font-size:.78rem; opacity:.85; }
 .h4-leg i { width:12px; height:12px; border-radius:3px; display:inline-block; }
@@ -367,57 +334,80 @@ CSS = """
 .h4b-track { display:flex; height:24px; border-radius:6px; overflow:hidden;
              background:rgba(127,127,127,.18); border:1px solid rgba(127,127,127,.28); }
 .h4b-seg { height:100%; display:flex; align-items:center; justify-content:center; color:#fff;
-           font-size:.69rem; font-weight:700; font-family:'Space Grotesk',sans-serif; white-space:nowrap; overflow:hidden;
-           text-shadow:0 1px 1px rgba(0,0,0,.45); }
+           font-size:.69rem; font-weight:700; font-family:'Space Grotesk',sans-serif;
+           white-space:nowrap; overflow:hidden; text-shadow:0 1px 1px rgba(0,0,0,.45); }
 .h4b-total { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:.95rem; }
 .h4b-total small { opacity:.55; font-weight:500; font-size:.66rem; }
-@media (max-width:560px){ .h4b-row{ grid-template-columns:120px 1fr 84px; } }
+@media (max-width:760px){ .h4-vs{ grid-template-columns:1fr; } }
+@media (max-width:560px){ .h4c-metrics{ grid-template-columns:1fr; } .h4b-row{ grid-template-columns:120px 1fr 84px; } }
 </style>
 """
 
 # ==========================================================================
-# 4. SIDEBAR - PARAMETRI
+# 4. SIDEBAR
 # ==========================================================================
 st.sidebar.markdown(f"### {_t['case']}")
-user_fabbisogno = st.sidebar.slider(_t["fabbisogno"], 2000, 50000, DEFAULT_FABBISOGNO, 1000, help=_t["fabbisogno_help"])
-user_lifetime = st.sidebar.slider(_t["lifetime"], 1, 30, DEFAULT_LIFETIME, 1, help=_t["lifetime_help"])
-user_cop = st.sidebar.number_input(_t["cop"], value=DEFAULT_COP, step=0.1, help=_t["cop_help"])
+user_fabbisogno = st.sidebar.slider(_t["fabbisogno"], 2000, 50000, 10000, 1000, help=_t["fabbisogno_help"])
+user_lifetime = st.sidebar.slider(_t["lifetime"], 1, 30, 20, 1)
+user_cop = st.sidebar.number_input(_t["cop"], value=3.0, step=0.1, help=_t["cop_help"])
+
+with st.sidebar.expander(_t["pv"], expanded=False):
+    pv_yield = st.number_input(_t["pv_yield"], 800, 1600, 1150, 25, help=_t["pv_yield_help"])
+    pv_area_kwp = st.number_input(_t["pv_area"], 3.0, 15.0, 5.0, 0.5, help=_t["pv_area_help"])
+
+with st.sidebar.expander(_t["macro_sb"], expanded=False):
+    n_edifici = st.number_input(_t["n_edifici"], 1, 5000, 20, 1)
 
 prezzi_kwh = {}
 with st.sidebar.expander(_t["prices"], expanded=False):
     for key, f in FUELS.items():
-        unit = FUEL_UNITS[key][LANG]
-        user_val = st.number_input(f"{_t['fuels'][key]} [{unit}]", value=float(f["natura"]), format="%.3f", key=f"fuel_{key}")
-        prezzi_kwh[key] = user_val * f["factor"]
+        val = st.number_input(f"{_t['fuels'][key]} [{FUEL_UNITS[key]}]",
+                              value=float(f["natura"]), format="%.3f", key=f"fuel_{key}")
+        prezzi_kwh[key] = val * f["factor"]
 
 # ==========================================================================
-# 5. MOTORE DI CALCOLO
+# 5. MOTORE
 # ==========================================================================
 def calcola(t):
     eta = user_cop if t["is_pdc"] else t["eta_cop"]
-    if eta == 0:
-        eta = 1.0
-    consumo_vettore = user_fabbisogno / eta
+    eta = eta if eta > 0 else 1.0
+    consumo = user_fabbisogno / eta
     cb = t["consumo_base"] if t["consumo_base"] > 0 else 1.0
-    scala = consumo_vettore / cb
-    wtt = consumo_vettore * (t["wtt_base"] / cb)
-    ttw = consumo_vettore * (t["ttw_base"] / cb)
+    scala = consumo / cb
+    wtt = consumo * (t["wtt_base"] / cb)
+    ttw = consumo * (t["ttw_base"] / cb)
     costruz = t["constr"] / user_lifetime
-    fuel = consumo_vettore * prezzi_kwh.get(t["fuel_key"], 0.10)
+    fuel = consumo * prezzi_kwh.get(t["fuel_key"], 0.10)
     capex = t["capex"] / user_lifetime
     return {
         "type": t["type"], "vector": t["vector"], "icon": ICONS[t["type"]],
         "Nome": _t["names"][t["type"]], "Vettore": _t["vectors"][t["vector"]],
-        "En_Primaria": t["en_prim_base"] * scala, "Eta": eta,
+        "Consumo": consumo, "En_Primaria": t["en_prim_base"] * scala, "Eta": eta,
         "WtT": wtt, "TtW": ttw, "Costruz": costruz, "Emiss": wtt + ttw + costruz,
-        "Fuel": fuel, "Maint": t["maint"], "CAPEx": capex, "Costo": fuel + t["maint"] + capex,
+        "Fuel": fuel, "Maint": t["maint"], "CAPEx": capex,
+        "Costo": fuel + t["maint"] + capex,
     }
 
-df = pd.DataFrame([calcola(t) for t in TECHNOLOGIES])
 
-# ==========================================================================
-# 6. COLORI (scala verde->ambra->rosso) E HELPER
-# ==========================================================================
+df = pd.DataFrame([calcola(t) for t in TECHNOLOGIES])
+df["Label"] = df["Nome"] + " · " + df["Vettore"]
+
+idx_cheap = df["Costo"].idxmin()
+idx_clean = df["Emiss"].idxmin()
+
+r_pdc = df[(df["type"] == "heat_pump") & (df["vector"] == "elc_self")].iloc[0]
+r_h2 = df[(df["type"] == "boiler_h2") & (df["vector"] == "h2_green")].iloc[0]
+r_gas = df[df["type"] == "boiler_gas"].iloc[0]
+
+
+def fmt(v):
+    return f"{v:,.0f}".replace(",", ".")
+
+
+def fmt1(v):
+    return f"{v:,.1f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
 def lerp(frac):
     frac = max(0.0, min(1.0, frac))
     stops = [(13, 124, 92), (28, 124, 140), (201, 138, 27), (212, 98, 43), (163, 59, 74)]
@@ -431,19 +421,15 @@ def lerp(frac):
         r, g, b = (round(a[j] + (c[j] - a[j]) * f) for j in range(3))
     return f"#{r:02X}{g:02X}{b:02X}"
 
+
 def frac_of(series, val, higher_is_better=False):
     lo, hi = series.min(), series.max()
     f = 0.0 if hi == lo else (val - lo) / (hi - lo)
     return (1 - f) if higher_is_better else f
 
-def fmt(v):
-    return f"{v:,.0f}".replace(",", ".")
-
-idx_cheap = df["Costo"].idxmin()
-idx_clean = df["Emiss"].idxmin()
 
 # ==========================================================================
-# 7. INTESTAZIONE + MESSAGGIO CHIAVE
+# 6. INTESTAZIONE
 # ==========================================================================
 st.markdown(CSS, unsafe_allow_html=True)
 st.title(_t["title"])
@@ -453,72 +439,103 @@ st.caption(_t["credits"])
 with st.expander(_t["scope_title"], expanded=False):
     st.markdown(_t["scope_md"])
     if os.path.exists("ReadMe_calore.md"):
+        st.markdown("---")
         with open("ReadMe_calore.md", "r", encoding="utf-8") as fh:
-            st.markdown("---")
             st.markdown(fh.read())
 
-take = _t["takeaway"].format(
-    cheap=df.loc[idx_cheap, "Nome"] + " · " + df.loc[idx_cheap, "Vettore"], cheap_v=fmt(df.loc[idx_cheap, "Costo"]),
-    clean=df.loc[idx_clean, "Nome"] + " · " + df.loc[idx_clean, "Vettore"], clean_v=fmt(df.loc[idx_clean, "Emiss"]),
-)
-st.markdown(f"<div class='h4-take'>{take}</div>", unsafe_allow_html=True)
-# --------------------------------------------------------------------------
-# CONFRONTO DIRETTO: le due strade che partono da elettricità rinnovabile.
-# La pompa di calore autoalimentata e la caldaia a idrogeno verde autoprodotto
-# usano la stessa risorsa: qui si misura quanta ne serve a ciascuna.
-# --------------------------------------------------------------------------
-r_pdc = df[(df["type"] == "heat_pump") & (df["vector"] == "elc_self")].iloc[0]
-r_h2 = df[(df["type"] == "boiler_h2") & (df["vector"] == "h2_green")].iloc[0]
+# ==========================================================================
+# 7. ① VERDETTO DI FATTIBILITA' OPERATIVA
+# ==========================================================================
+st.markdown("---")
+st.subheader(_t["v_title"])
+st.markdown(f"<div class='h4-sub'>{_t['v_sub']}</div>", unsafe_allow_html=True)
 
-# Calore ottenibile da 100 kWh di elettricità rinnovabile, per ciascuna filiera.
-calore_pdc = user_fabbisogno / r_pdc["En_Primaria"] * 100
-calore_h2 = user_fabbisogno / r_h2["En_Primaria"] * 100
-rapporto = r_h2["En_Primaria"] / r_pdc["En_Primaria"]
-
-st.markdown(f"### {_t['vs_title']}")
-st.markdown(f"<div class='h4-sub'>{_t['vs_intro']}</div>", unsafe_allow_html=True)
+# L'energia primaria delle filiere autoprodotte coincide con l'elettricita'
+# rinnovabile da generare: e' la base per dimensionare il fotovoltaico.
+el_pdc, el_h2 = r_pdc["En_Primaria"], r_h2["En_Primaria"]
+kwp_pdc, kwp_h2 = el_pdc / pv_yield, el_h2 / pv_yield
+area_pdc, area_h2 = kwp_pdc * pv_area_kwp, kwp_h2 * pv_area_kwp
+h2_kg = r_h2["Consumo"] / LHV_H2
+rapporto = el_h2 / el_pdc if el_pdc > 0 else 0
 
 
-def _vs_card(titolo, colore, calore, riga):
-    righe = "".join(
-        f"<div class='h4-vs-row'><span>{lbl}</span><b>{val}</b></div>"
-        for lbl, val in [
-            (_t["vs_m_prim"], f"{fmt(riga['En_Primaria'])} {_t['u_prim']}"),
-            (_t["vs_m_cost"], f"{fmt(riga['Costo'])} {_t['u_cost']}"),
-            (_t["vs_m_co2"], f"{fmt(riga['Emiss'])} {_t['u_co2']}"),
-        ])
-    return (
-        f"<div class='h4-vsc' style='border-top-color:{colore}'>"
-        f"<h5>{titolo}</h5>"
-        f"<div class='h4-vs-chain'>{_t['vs_chain']}</div>"
-        f"<div class='h4-vs-big' style='color:{colore}'>{fmt(calore)}"
-        f"<small>{_t['vs_heat']}</small></div>"
-        f"<div class='h4-vs-rows'>{righe}</div></div>"
-    )
+def _vs_card(titolo, colore, righe):
+    body = "".join(f"<div class='h4-vs-row'><span>{k}</span><b>{v}</b></div>" for k, v in righe)
+    return (f"<div class='h4-vsc' style='border-top-color:{colore}'>"
+            f"<h5>{titolo}</h5>{body}</div>")
 
 
 st.markdown(
     "<div class='h4-vs'>"
-    + _vs_card(f"♨️ {_t['vs_pdc']}", "#0D7C5C", calore_pdc, r_pdc)
-    + _vs_card(f"💧 {_t['vs_h2']}", "#A33B4A", calore_h2, r_h2)
+    + _vs_card(f"♨️ {_t['v_pdc']}", "#0D7C5C", [
+        (_t["v_el"], f"{fmt(el_pdc)} kWh/a"),
+        (_t["v_kwp"], f"{fmt1(kwp_pdc)} kWp"),
+        (_t["v_area"], f"{fmt(area_pdc)} m²"),
+        (_t["v_h2kg"], "—"),
+    ])
+    + _vs_card(f"💧 {_t['v_h2']}", "#A33B4A", [
+        (_t["v_el"], f"{fmt(el_h2)} kWh/a"),
+        (_t["v_kwp"], f"{fmt1(kwp_h2)} kWp"),
+        (_t["v_area"], f"{fmt(area_h2)} m²"),
+        (_t["v_h2kg"], f"{fmt(h2_kg)} kg/a"),
+    ])
     + "</div>", unsafe_allow_html=True)
 
-st.markdown(f"<div class='h4-verdict'>{_t['vs_ratio'].format(r=f'{rapporto:.1f}'.replace('.', ','))}</div>",
-            unsafe_allow_html=True)
+if rapporto <= 1.5:
+    st.markdown(f"<div class='h4-verdict h4-vd-ok'>{_t['v_ok'].format(a=fmt(area_h2))}</div>",
+                unsafe_allow_html=True)
+else:
+    st.markdown(
+        f"<div class='h4-verdict h4-vd-ko'>"
+        f"{_t['v_ko'].format(r=fmt1(rapporto), a=fmt(area_h2), a2=fmt(area_pdc))}</div>",
+        unsafe_allow_html=True)
 
-cwhy, cwhen = st.columns(2)
-with cwhy:
-    st.markdown(f"**{_t['vs_why_title']}**")
-    st.markdown(_t["vs_why"])
-with cwhen:
-    st.markdown(f"**{_t['vs_when_title']}**")
-    st.markdown(_t["vs_when"])
-
-st.divider()
+st.caption(_t["v_note"])
 
 # ==========================================================================
-# 8. CONTROLLO ORDINAMENTO + SCHEDE
+# 8. ② GAP ANALYSIS RISPETTO AL METANO
 # ==========================================================================
+st.markdown("---")
+st.subheader(_t["g_title"])
+st.markdown(f"<div class='h4-sub'>{_t['g_sub']}</div>", unsafe_allow_html=True)
+st.caption(f"{_t['g_ref']} — {fmt(r_gas['Costo'])} {_t['u_cost']} · {fmt(r_gas['Emiss'])} {_t['u_co2']}")
+
+gap = []
+for _, r in df.iterrows():
+    if r["type"] == "boiler_gas":
+        continue
+    d_costo = r["Costo"] - r_gas["Costo"]
+    d_co2 = r_gas["Emiss"] - r["Emiss"]          # positivo = emissioni evitate
+    eur_ton = (d_costo / d_co2 * 1000) if d_co2 > 0 else None
+    gap.append({"Label": r["Label"], "icon": r["icon"],
+                "d_costo": d_costo, "d_co2": d_co2, "eur_ton": eur_ton})
+
+gap = sorted(gap, key=lambda g: (g["eur_ton"] is None, g["eur_ton"] if g["eur_ton"] is not None else 0))
+
+righe_gap = []
+for g in gap:
+    if g["eur_ton"] is None:
+        col, testo = "#A33B4A", _t["g_na"]
+    else:
+        col = lerp(min(g["eur_ton"], 800) / 800)
+        testo = f"{fmt(g['eur_ton'])} €/ton"
+    verso = _t["g_saves"] if g["d_costo"] < 0 else _t["g_costs"]
+    righe_gap.append({
+        _t["c_tech"]: f"{g['icon']} {g['Label']}",
+        _t["g_dcost"]: f"{verso} {fmt(abs(g['d_costo']))} {_t['u_cost']}",
+        _t["g_dco2"]: f"{fmt(g['d_co2'])} {_t['u_co2']}" if g["d_co2"] > 0 else _t["g_worse"],
+        _t["g_eur_ton"]: testo,
+    })
+
+st.table(pd.DataFrame(righe_gap))
+st.caption(_t["g_legend"])
+
+# ==========================================================================
+# 9. ③ TUTTE LE SOLUZIONI A CONFRONTO
+# ==========================================================================
+st.markdown("---")
+st.subheader(_t["c_title"])
+
 sort_map = {_t["sort_cost"]: ("Costo", False), _t["sort_co2"]: ("Emiss", False), _t["sort_eff"]: ("Eta", True)}
 sort_choice = st.radio(_t["sort_label"], list(sort_map.keys()), horizontal=True)
 sort_col, sort_desc = sort_map[sort_choice]
@@ -526,15 +543,15 @@ df_sorted = df.sort_values(sort_col, ascending=not sort_desc)
 
 st.markdown(f"<div class='h4-note'>{_t['note']}</div>", unsafe_allow_html=True)
 
+
 def metric_block(label, value, unit, frac, fill_ratio):
     color = lerp(frac)
     w = max(3, min(100, fill_ratio * 100))
-    unit_html = f"<span style='font-size:.62rem;color:#9AA6B2;font-weight:500'> {unit}</span>" if unit else ""
-    return (
-        f"<div><div class='h4m-head'><span class='h4m-lbl'>{label}</span>"
-        f"<span class='h4m-val' style='color:{color}'>{value}{unit_html}</span></div>"
-        f"<div class='h4m-bar'><div class='h4m-fill' style='width:{w:.0f}%;background:{color}'></div></div></div>"
-    )
+    unit_html = f"<span style='font-size:.62rem;opacity:.6;font-weight:500'> {unit}</span>" if unit else ""
+    return (f"<div><div class='h4m-head'><span class='h4m-lbl'>{label}</span>"
+            f"<span class='h4m-val' style='color:{color}'>{value}{unit_html}</span></div>"
+            f"<div class='h4m-bar'><div class='h4m-fill' style='width:{w:.0f}%;background:{color}'></div></div></div>")
+
 
 cards = ""
 for i, r in df_sorted.iterrows():
@@ -545,112 +562,125 @@ for i, r in df_sorted.iterrows():
     if i == idx_clean:
         badges += f"<span class='h4c-badge' style='background:#0B6E4F'>{_t['badge_clean']}</span>"
 
-    m_cost = metric_block(_t["m_cost"], fmt(r["Costo"]), _t["u_cost"],
-                          frac_of(df["Costo"], r["Costo"]), r["Costo"] / df["Costo"].max())
-    m_co2 = metric_block(_t["m_co2"], fmt(r["Emiss"]), _t["u_co2"],
-                         frac_of(df["Emiss"], r["Emiss"]), r["Emiss"] / df["Emiss"].max())
-    m_eff = metric_block(_t["m_eff"], f"{r['Eta']:.1f}".replace(".", ","), "",
-                         frac_of(df["Eta"], r["Eta"], higher_is_better=True), r["Eta"] / df["Eta"].max())
-    m_prim = metric_block(_t["m_prim"], fmt(r["En_Primaria"]), _t["u_prim"],
-                          frac_of(df["En_Primaria"], r["En_Primaria"]), r["En_Primaria"] / df["En_Primaria"].max())
-
+    blocchi = (
+        metric_block(_t["m_cost"], fmt(r["Costo"]), _t["u_cost"],
+                     frac_of(df["Costo"], r["Costo"]), r["Costo"] / df["Costo"].max())
+        + metric_block(_t["m_co2"], fmt(r["Emiss"]), _t["u_co2"],
+                       frac_of(df["Emiss"], r["Emiss"]), r["Emiss"] / df["Emiss"].max())
+        + metric_block(_t["m_eff"], f"{r['Eta']:.1f}".replace(".", ","), "",
+                       frac_of(df["Eta"], r["Eta"], higher_is_better=True), r["Eta"] / df["Eta"].max())
+        + metric_block(_t["m_prim"], fmt(r["En_Primaria"]), _t["u_prim"],
+                       frac_of(df["En_Primaria"], r["En_Primaria"]), r["En_Primaria"] / df["En_Primaria"].max())
+    )
     cards += (
         f"<div class='h4c' style='border-left-color:{accent}'>"
         f"<div class='h4c-top'><div class='h4c-name'><span class='ic'>{r['icon']}</span>{r['Nome']}</div>"
         f"<div class='h4c-tags'>{badges}<span class='h4c-vchip'>{r['Vettore']}</span></div></div>"
-        f"<div class='h4c-metrics'>{m_cost}{m_co2}{m_eff}{m_prim}</div></div>"
+        f"<div class='h4c-metrics'>{blocchi}</div></div>"
     )
 
 st.markdown(f"<div class='h4-grid'>{cards}</div>", unsafe_allow_html=True)
 
-# ==========================================================================
-# 9. DETTAGLIO COMPOSIZIONE (barre impilate HTML ad alto contrasto)
-# ==========================================================================
-df["Label"] = df["Nome"] + " · " + df["Vettore"]
 
-def render_breakdown(data, segments, unit, sort_col):
-    """data: DataFrame; segments: list of (col, label, color); unit: str."""
-    dd = data.sort_values(sort_col, ascending=False)
+def render_breakdown(data, segments, unit, sort_key):
+    dd = data.sort_values(sort_key, ascending=False)
     totals = dd[[s[0] for s in segments]].sum(axis=1)
     max_total = totals.max() if totals.max() > 0 else 1.0
-
     legend = "<div class='h4-leg'>" + "".join(
         f"<span><i style='background:{c}'></i>{lbl}</span>" for _, lbl, c in segments) + "</div>"
-
     rows = ""
-    for idx, r in dd.iterrows():
+    for _, r in dd.iterrows():
         total = sum(r[s[0]] for s in segments)
         segs = ""
         for col, lbl, color in segments:
             val = r[col]
             if val <= 0:
                 continue
-            w_track = val / max_total * 100          # larghezza rispetto al massimo
-            w_in = val / total * 100 if total > 0 else 0  # quota dentro la barra
+            w_track = val / max_total * 100
+            w_in = val / total * 100 if total > 0 else 0
             txt = fmt(val) if w_in > 11 else ""
             segs += f"<div class='h4b-seg' style='width:{w_track:.2f}%;background:{color}'>{txt}</div>"
-        rows += (
-            f"<div class='h4b-row'>"
-            f"<div class='h4b-label'>{r['icon']} {r['Label']}</div>"
-            f"<div class='h4b-track'>{segs}</div>"
-            f"<div class='h4b-total'>{fmt(total)} <small>{unit}</small></div>"
-            f"</div>"
-        )
+        rows += (f"<div class='h4b-row'><div class='h4b-label'>{r['icon']} {r['Label']}</div>"
+                 f"<div class='h4b-track'>{segs}</div>"
+                 f"<div class='h4b-total'>{fmt(total)} <small>{unit}</small></div></div>")
     return legend + rows
 
+
 with st.expander(_t["detail"], expanded=True):
-    st.markdown(f"<div class='h4-bd-title'>{_t['chart_cost']}</div>", unsafe_allow_html=True)
-    cost_segments = [("CAPEx", _t["leg_capex"], "#0E6E7E"), ("Maint", _t["leg_maint"], "#C58A1A"), ("Fuel", _t["leg_fuel"], "#A33B4A")]
-    st.markdown(render_breakdown(df, cost_segments, _t["u_cost"], "Costo"), unsafe_allow_html=True)
+    st.markdown(f"**{_t['chart_cost']}**")
+    st.markdown(render_breakdown(
+        df, [("CAPEx", _t["leg_capex"], "#0E6E7E"), ("Maint", _t["leg_maint"], "#C58A1A"),
+             ("Fuel", _t["leg_fuel"], "#A33B4A")], _t["u_cost"], "Costo"), unsafe_allow_html=True)
+    st.markdown(f"**{_t['chart_em']}**")
+    st.markdown(render_breakdown(
+        df, [("WtT", _t["leg_wtt"], "#46586B"), ("TtW", _t["leg_ttw"], "#C2521E"),
+             ("Costruz", _t["leg_constr"], "#8A94A0")], _t["u_co2"], "Emiss"), unsafe_allow_html=True)
 
-    st.markdown(f"<div class='h4-bd-title'>{_t['chart_em']}</div>", unsafe_allow_html=True)
-    em_segments = [("WtT", _t["leg_wtt"], "#46586B"), ("TtW", _t["leg_ttw"], "#C2521E"), ("Costruz", _t["leg_constr"], "#8A94A0")]
-    st.markdown(render_breakdown(df, em_segments, _t["u_co2"], "Emiss"), unsafe_allow_html=True)
-
-# ==========================================================================
-# 10. TABELLA DATI
-# ==========================================================================
 with st.expander(_t["table"]):
     show = df.sort_values("Costo")[["Label", "En_Primaria", "Eta", "Emiss", "Costo"]].rename(columns={
-        "Label": _t["c_tech"], "En_Primaria": _t["c_prim"], "Eta": _t["c_eff"], "Emiss": _t["c_em"], "Costo": _t["c_cost"]})
+        "Label": _t["c_tech"], "En_Primaria": _t["c_prim"], "Eta": _t["c_eff"],
+        "Emiss": _t["c_em"], "Costo": _t["c_cost"]})
     st.dataframe(show.style.format({_t["c_prim"]: "{:,.0f}", _t["c_eff"]: "{:.2f}",
-                                    _t["c_em"]: "{:,.0f}", _t["c_cost"]: "€ {:,.0f}"}), use_container_width=True)
+                                    _t["c_em"]: "{:,.0f}", _t["c_cost"]: "€ {:,.0f}"}),
+                 use_container_width=True)
 
 # ==========================================================================
-# 11. ESPORTAZIONE NEL DATABASE CENTRALE
+# 10. ④ ANALISI MACRO
+# ==========================================================================
+st.markdown("---")
+st.subheader(_t["mm_title"])
+st.markdown(f"<div class='h4-sub'>{_t['mm_sub'].format(n=n_edifici)}</div>", unsafe_allow_html=True)
+
+mc1, mc2 = st.columns(2)
+for col, (nome, riga, colore, h2m) in zip(
+        (mc1, mc2),
+        [(f"♨️ {_t['v_pdc']}", r_pdc, "#0D7C5C", 0.0),
+         (f"💧 {_t['v_h2']}", r_h2, "#A33B4A", h2_kg)]):
+    with col:
+        st.markdown(f"**{nome}**")
+        st.metric(_t["mm_cost"], f"€ {fmt(riga['Costo'] * n_edifici)}")
+        st.metric(_t["mm_co2"], f"{fmt((r_gas['Emiss'] - riga['Emiss']) * n_edifici / 1000)} ton/a")
+        st.metric(_t["mm_el"], f"{fmt(riga['En_Primaria'] * n_edifici / 1000)} MWh/a")
+        st.metric(_t["mm_area"], f"{fmt(riga['En_Primaria'] / pv_yield * pv_area_kwp * n_edifici)} m²")
+        if h2m > 0:
+            st.metric(_t["mm_h2"], f"{fmt1(h2m * n_edifici / 1000)} ton/a")
+
+st.caption(_t["mm_hint"])
+
+# ==========================================================================
+# 11. ⑤ ESPORTAZIONE
 # ==========================================================================
 WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwpP0x0hBnhOadXA43IieWg9EusAuhaafpyeXpyaStssDd7Qo-jwnuOttAllzz8r5JS/exec"
 
-st.divider()
-st.subheader("💾 Esportazione")
-
-# Riferimento fossile per il risparmio di emissioni: la caldaia a metano.
-em_metano = df.loc[df["type"] == "boiler_gas", "Emiss"].values[0]
-em_pulita = df.loc[idx_clean, "Emiss"]
+st.markdown("---")
+st.subheader(_t["e_title"])
 
 sol_economica = f'{df.loc[idx_cheap, "Nome"]} · {df.loc[idx_cheap, "Vettore"]}'
 sol_pulita = f'{df.loc[idx_clean, "Nome"]} · {df.loc[idx_clean, "Vettore"]}'
 
-codice = st.text_input("Codice identificativo del Comune (es. 030043):", key="id_calore")
+codice = st.text_input(_t["e_id"], key="id_calore")
 
-if st.button("💾 Esporta nel database centrale", type="primary"):
+if st.button(_t["e_btn"], type="primary"):
     if not codice:
-        st.error("Inserisci il codice identificativo prima di procedere.")
+        st.error(_t["e_noid"])
     else:
         payload = {
             "ID_ISTAT": codice,
             "T24_FABBISOGNO_TERMICO_KWH_ANNO": int(user_fabbisogno),
             "T24_SOLUZIONE_OTTIMALE": sol_economica,
             "T24_SOLUZIONE_PIU_PULITA": sol_pulita,
-            "T24_EMISSIONI_EVITATE_KGCO2_ANNO": round(em_metano - em_pulita, 0),
+            "T24_EMISSIONI_EVITATE_KGCO2_ANNO": round(r_gas["Emiss"] - df.loc[idx_clean, "Emiss"], 0),
         }
         try:
             resp = requests.post(WEBHOOK_URL, data=json.dumps(payload),
-                                 headers={"Content-Type": "application/json"}, timeout=20)
+                                 headers={"Content-Type": "application/json"}, timeout=60)
             if resp.status_code in (200, 201):
-                st.success("✅ Dati trasmessi correttamente.")
+                st.success(_t["e_ok"])
+                st.caption(resp.text)
                 st.balloons()
             else:
-                st.error(f"Errore di sincronizzazione (codice {resp.status_code})")
+                st.error(_t["e_err"].format(c=resp.status_code))
+        except requests.exceptions.ReadTimeout:
+            st.warning(_t["e_timeout"])
         except Exception as e:
-            st.error(f"Errore di connessione: {e}")
+            st.error(_t["e_conn"].format(e=e))
