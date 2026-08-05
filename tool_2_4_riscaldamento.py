@@ -9,6 +9,10 @@ Struttura della pagina, nell'ordine:
   3. CONFRONTO  - valori assoluti di tutte le soluzioni, grafici e tabella
   4. MACRO      - la stessa scelta ripetuta su piu' edifici
   5. EXPORT     - trasmissione all'excelone
+
+Schede di confronto: superfici piatte senza bordo, un solo numero grande per
+scheda (quello su cui si sta ordinando) e tinta chiara riservata alle soluzioni
+migliori per costo ed emissioni. Il colore lavora una volta sola, dove serve.
 """
 
 import os
@@ -76,7 +80,7 @@ conduzione manuale. Il pellet è invece incluso perché standardizzato.
         "sort_label": "Ordina per:", "sort_cost": "💶 Costo", "sort_co2": "🌱 Emissioni", "sort_eff": "⚡ Efficienza",
         "m_cost": "Costo annuo", "u_cost": "€/anno", "m_co2": "Emissioni", "u_co2": "kg CO₂/anno",
         "m_eff": "Efficienza (η / COP)", "m_prim": "Energia primaria", "u_prim": "kWh/anno",
-        "badge_cheap": "💶 più economico", "badge_clean": "🌱 più pulito",
+        "badge_cheap": "più economico", "badge_clean": "più pulito",
         "detail": "📊 Da cosa derivano costi ed emissioni",
         "chart_cost": "Composizione del costo annuo [€/anno]",
         "chart_em": "Composizione delle emissioni annue [kg CO₂/anno]",
@@ -84,7 +88,7 @@ conduzione manuale. Il pellet è invece incluso perché standardizzato.
         "leg_wtt": "Filiera (WtT)", "leg_ttw": "Camino (TtW)", "leg_constr": "Costruzione (divisa per gli anni)",
         "table": "📋 Tabella dati completa",
         "c_tech": "Soluzione", "c_prim": "Energia primaria", "c_eff": "η / COP", "c_em": "CO₂/anno", "c_cost": "Costo/anno",
-        "note": "💡 La lunghezza delle barre indica la grandezza relativa; il colore dice se è un bene (verde) o un problema (rosso).",
+        "note": "💡 In evidenza il valore su cui stai ordinando. Sono colorate soltanto le soluzioni migliori per costo ed emissioni.",
         # --- macro ---
         "mm_title": "④ Analisi macro",
         "mm_sub": "La stessa scelta ripetuta su {n} edifici dello stesso tipo.",
@@ -151,7 +155,7 @@ Pellet is included, being standardised.
         "sort_label": "Sort by:", "sort_cost": "💶 Cost", "sort_co2": "🌱 Emissions", "sort_eff": "⚡ Efficiency",
         "m_cost": "Annual cost", "u_cost": "€/yr", "m_co2": "Emissions", "u_co2": "kg CO₂/yr",
         "m_eff": "Efficiency (η / COP)", "m_prim": "Primary energy", "u_prim": "kWh/yr",
-        "badge_cheap": "💶 cheapest", "badge_clean": "🌱 cleanest",
+        "badge_cheap": "cheapest", "badge_clean": "cleanest",
         "detail": "📊 Where costs and emissions come from",
         "chart_cost": "Annual cost breakdown [€/yr]",
         "chart_em": "Annual emissions breakdown [kg CO₂/yr]",
@@ -159,7 +163,7 @@ Pellet is included, being standardised.
         "leg_wtt": "Supply chain (WtT)", "leg_ttw": "Stack (TtW)", "leg_constr": "Construction (spread over years)",
         "table": "📋 Full data table",
         "c_tech": "Option", "c_prim": "Primary energy", "c_eff": "η / COP", "c_em": "CO₂/yr", "c_cost": "Cost/yr",
-        "note": "💡 Bar length shows relative size; colour tells whether it is good (green) or a problem (red).",
+        "note": "💡 The highlighted figure is the one you are sorting by. Only the best options for cost and emissions are coloured.",
         "mm_title": "④ Macro analysis",
         "mm_sub": "The same choice repeated across {n} buildings of the same type.",
         "mm_cost": "Total annual cost", "mm_co2": "Total CO₂ avoided",
@@ -224,7 +228,7 @@ so standardizirani.
         "sort_label": "Razvrsti po:", "sort_cost": "💶 Strošek", "sort_co2": "🌱 Emisije", "sort_eff": "⚡ Učinkovitost",
         "m_cost": "Letni strošek", "u_cost": "€/leto", "m_co2": "Emisije", "u_co2": "kg CO₂/leto",
         "m_eff": "Učinkovitost (η / COP)", "m_prim": "Primarna energija", "u_prim": "kWh/leto",
-        "badge_cheap": "💶 najcenejše", "badge_clean": "🌱 najčistejše",
+        "badge_cheap": "najcenejše", "badge_clean": "najčistejše",
         "detail": "📊 Od kod izhajajo stroški in emisije",
         "chart_cost": "Sestava letnega stroška [€/leto]",
         "chart_em": "Sestava letnih emisij [kg CO₂/leto]",
@@ -232,7 +236,7 @@ so standardizirani.
         "leg_wtt": "Dobavna veriga (WtT)", "leg_ttw": "Dimnik (TtW)", "leg_constr": "Izdelava (porazdeljena na leta)",
         "table": "📋 Celotna tabela podatkov",
         "c_tech": "Rešitev", "c_prim": "Primarna energija", "c_eff": "η / COP", "c_em": "CO₂/leto", "c_cost": "Strošek/leto",
-        "note": "💡 Dolžina stolpcev prikazuje relativno velikost; barva pove, ali je dobro (zeleno) ali težava (rdeče).",
+        "note": "💡 Poudarjena je vrednost, po kateri razvrščate. Obarvane so le najboljše rešitve glede stroška in emisij.",
         "mm_title": "④ Makro analiza",
         "mm_sub": "Enaka izbira, ponovljena na {n} stavbah iste vrste.",
         "mm_cost": "Skupni letni strošek", "mm_co2": "Skupni prihranjeni CO₂",
@@ -290,29 +294,25 @@ FUEL_UNITS = {"diesel": "€/l", "metano": "€/Sm³", "pellet": "€/sacco",
 
 # ==========================================================================
 # 3. STILE
+#    Le tinte sono translucide e il testo eredita il colore del tema:
+#    così le schede restano leggibili sia sul tema chiaro sia su quello scuro.
 # ==========================================================================
 CSS = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap');
 .h4-sub { opacity:.7; font-size:0.96rem; margin:-4px 0 10px 0; }
 .h4-note { opacity:.6; font-size:0.8rem; margin:10px 0 2px 0; }
-.h4-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:14px; margin-top:8px; }
-.h4c { background:rgba(127,127,127,.10); border:1px solid rgba(127,127,127,.26);
-       border-left-width:6px; border-radius:13px; padding:15px 17px 14px 17px; }
-.h4c-top { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:12px; }
-.h4c-name { font-weight:700; font-size:1.04rem; line-height:1.2; }
+/* schede di confronto */
+.h4-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(235px,1fr)); gap:12px; margin-top:10px; }
+.h4c { background:rgba(127,127,127,.09); border-radius:12px; padding:15px 17px 16px 17px; }
+.h4c-best { background:rgba(29,158,117,.15); }
+.h4c-name { font-weight:700; font-size:1.0rem; line-height:1.25; }
 .h4c-name .ic { margin-right:6px; }
-.h4c-tags { display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex:0 0 auto; }
-.h4c-vchip { font-size:.7rem; background:rgba(127,127,127,.16); border:1px solid rgba(127,127,127,.30);
-             border-radius:6px; padding:2px 8px; white-space:nowrap; opacity:.92; }
-.h4c-badge { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:.66rem; letter-spacing:.04em;
-             text-transform:uppercase; color:#fff; padding:3px 8px; border-radius:6px; white-space:nowrap; }
-.h4c-metrics { display:grid; grid-template-columns:1fr 1fr; gap:11px 16px; }
-.h4m-head { display:flex; justify-content:space-between; align-items:baseline; gap:6px; margin-bottom:4px; }
-.h4m-lbl { font-size:.72rem; opacity:.6; text-transform:uppercase; letter-spacing:.03em; }
-.h4m-val { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:1.0rem; }
-.h4m-bar { height:7px; border-radius:5px; background:rgba(127,127,127,.20); overflow:hidden; }
-.h4m-fill { height:100%; border-radius:5px; }
+.h4c-sub { font-size:.78rem; opacity:.62; margin:2px 0 15px 0; }
+.h4c-num { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:1.95rem; line-height:1; }
+.h4c-unit { font-size:.78rem; opacity:.62; margin-top:5px; }
+.h4c-flag { font-size:.72rem; font-weight:700; color:#1D9E75; letter-spacing:.02em; margin-top:9px; }
+.h4c-other { font-size:.78rem; opacity:.62; margin-top:9px; }
 /* verdetto */
 .h4-vs { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:6px 0; }
 .h4-vsc { border:1px solid rgba(127,127,127,.28); border-radius:13px; padding:16px 18px;
@@ -339,7 +339,7 @@ CSS = """
 .h4b-total { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:.95rem; }
 .h4b-total small { opacity:.55; font-weight:500; font-size:.66rem; }
 @media (max-width:760px){ .h4-vs{ grid-template-columns:1fr; } }
-@media (max-width:560px){ .h4c-metrics{ grid-template-columns:1fr; } .h4b-row{ grid-template-columns:120px 1fr 84px; } }
+@media (max-width:560px){ .h4b-row{ grid-template-columns:120px 1fr 84px; } }
 </style>
 """
 
@@ -409,6 +409,7 @@ def fmt1(v):
 
 
 def lerp(frac):
+    """Scala verde -> rosso, usata dalla tabella della gap analysis."""
     frac = max(0.0, min(1.0, frac))
     stops = [(13, 124, 92), (28, 124, 140), (201, 138, 27), (212, 98, 43), (163, 59, 74)]
     pos = frac * (len(stops) - 1)
@@ -420,12 +421,6 @@ def lerp(frac):
         a, c = stops[i], stops[i + 1]
         r, g, b = (round(a[j] + (c[j] - a[j]) * f) for j in range(3))
     return f"#{r:02X}{g:02X}{b:02X}"
-
-
-def frac_of(series, val, higher_is_better=False):
-    lo, hi = series.min(), series.max()
-    f = 0.0 if hi == lo else (val - lo) / (hi - lo)
-    return (1 - f) if higher_is_better else f
 
 
 # ==========================================================================
@@ -515,9 +510,8 @@ gap = sorted(gap, key=lambda g: (g["eur_ton"] is None, g["eur_ton"] if g["eur_to
 righe_gap = []
 for g in gap:
     if g["eur_ton"] is None:
-        col, testo = "#A33B4A", _t["g_na"]
+        testo = _t["g_na"]
     else:
-        col = lerp(min(g["eur_ton"], 800) / 800)
         testo = f"{fmt(g['eur_ton'])} €/ton"
     verso = _t["g_saves"] if g["d_costo"] < 0 else _t["g_costs"]
     righe_gap.append({
@@ -532,6 +526,8 @@ st.caption(_t["g_legend"])
 
 # ==========================================================================
 # 9. ③ TUTTE LE SOLUZIONI A CONFRONTO
+#    Una scheda per soluzione: un solo numero grande (la metrica su cui si
+#    sta ordinando) e tinta chiara riservata alle migliori per costo ed emissioni.
 # ==========================================================================
 st.markdown("---")
 st.subheader(_t["c_title"])
@@ -544,39 +540,48 @@ df_sorted = df.sort_values(sort_col, ascending=not sort_desc)
 st.markdown(f"<div class='h4-note'>{_t['note']}</div>", unsafe_allow_html=True)
 
 
-def metric_block(label, value, unit, frac, fill_ratio):
-    color = lerp(frac)
-    w = max(3, min(100, fill_ratio * 100))
-    unit_html = f"<span style='font-size:.62rem;opacity:.6;font-weight:500'> {unit}</span>" if unit else ""
-    return (f"<div><div class='h4m-head'><span class='h4m-lbl'>{label}</span>"
-            f"<span class='h4m-val' style='color:{color}'>{value}{unit_html}</span></div>"
-            f"<div class='h4m-bar'><div class='h4m-fill' style='width:{w:.0f}%;background:{color}'></div></div></div>")
+def _valore_grande(r, colonna):
+    """Numero in evidenza e sua unita', secondo l'ordinamento scelto."""
+    if colonna == "Costo":
+        return fmt(r["Costo"]), _t["u_cost"]
+    if colonna == "Emiss":
+        return fmt(r["Emiss"]), _t["u_co2"]
+    return f"{r['Eta']:.1f}".replace(".", ","), _t["m_eff"]
+
+
+def _altre_metriche(r, escluso):
+    """Le altre due metriche, compatte sotto il numero grande."""
+    voci = []
+    if escluso != "Costo":
+        voci.append(f"{fmt(r['Costo'])} {_t['u_cost']}")
+    if escluso != "Emiss":
+        voci.append(f"{fmt(r['Emiss'])} {_t['u_co2']}")
+    if escluso != "Eta":
+        voci.append("η " + f"{r['Eta']:.1f}".replace(".", ","))
+    return " · ".join(voci)
 
 
 cards = ""
 for i, r in df_sorted.iterrows():
-    accent = lerp(frac_of(df["Emiss"], r["Emiss"]))
-    badges = ""
-    if i == idx_cheap:
-        badges += f"<span class='h4c-badge' style='background:#1C7C8C'>{_t['badge_cheap']}</span>"
-    if i == idx_clean:
-        badges += f"<span class='h4c-badge' style='background:#0B6E4F'>{_t['badge_clean']}</span>"
+    is_best = i in (idx_cheap, idx_clean)
 
-    blocchi = (
-        metric_block(_t["m_cost"], fmt(r["Costo"]), _t["u_cost"],
-                     frac_of(df["Costo"], r["Costo"]), r["Costo"] / df["Costo"].max())
-        + metric_block(_t["m_co2"], fmt(r["Emiss"]), _t["u_co2"],
-                       frac_of(df["Emiss"], r["Emiss"]), r["Emiss"] / df["Emiss"].max())
-        + metric_block(_t["m_eff"], f"{r['Eta']:.1f}".replace(".", ","), "",
-                       frac_of(df["Eta"], r["Eta"], higher_is_better=True), r["Eta"] / df["Eta"].max())
-        + metric_block(_t["m_prim"], fmt(r["En_Primaria"]), _t["u_prim"],
-                       frac_of(df["En_Primaria"], r["En_Primaria"]), r["En_Primaria"] / df["En_Primaria"].max())
-    )
+    flags = []
+    if i == idx_cheap:
+        flags.append(_t["badge_cheap"])
+    if i == idx_clean:
+        flags.append(_t["badge_clean"])
+    flag_html = f"<div class='h4c-flag'>{' · '.join(flags)}</div>" if flags else ""
+
+    valore, unita = _valore_grande(r, sort_col)
     cards += (
-        f"<div class='h4c' style='border-left-color:{accent}'>"
-        f"<div class='h4c-top'><div class='h4c-name'><span class='ic'>{r['icon']}</span>{r['Nome']}</div>"
-        f"<div class='h4c-tags'>{badges}<span class='h4c-vchip'>{r['Vettore']}</span></div></div>"
-        f"<div class='h4c-metrics'>{blocchi}</div></div>"
+        f"<div class='h4c{' h4c-best' if is_best else ''}'>"
+        f"<div class='h4c-name'><span class='ic'>{r['icon']}</span>{r['Nome']}</div>"
+        f"<div class='h4c-sub'>{r['Vettore']}</div>"
+        f"<div class='h4c-num'>{valore}</div>"
+        f"<div class='h4c-unit'>{unita}</div>"
+        f"{flag_html}"
+        f"<div class='h4c-other'>{_altre_metriche(r, sort_col)}</div>"
+        f"</div>"
     )
 
 st.markdown(f"<div class='h4-grid'>{cards}</div>", unsafe_allow_html=True)
@@ -684,5 +689,3 @@ if st.button(_t["e_btn"], type="primary"):
             st.warning(_t["e_timeout"])
         except Exception as e:
             st.error(_t["e_conn"].format(e=e))
-
-
