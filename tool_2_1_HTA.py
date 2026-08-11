@@ -999,12 +999,15 @@ st.markdown("---")
 # ==========================================
 # 9. FASE 2: FABBISOGNI + DOWNLOAD TEMPLATE 2
 # ==========================================
+
 st.header(_t["header_fase2"])
 uploaded_file_2 = st.file_uploader("Upload Fase 2", type=["xlsx", "csv"], key="fase2")
 
 n_aziende = 0
 totale_h2 = 0.0
 nomi_aziende = ""
+ateco_aziende = ""
+fabbisogni_aziende = ""
 
 if uploaded_file_2:
     try:
@@ -1013,20 +1016,54 @@ if uploaded_file_2:
         st.success("✅ Dati Fabbisogni caricati!")
         st.dataframe(df2, use_container_width=True)
 
-        # Colonna fabbisogno e colonna nome rilevate in modo language-agnostic
         col_target = next((c for c in df2.columns if 'fabbisogno' in c or 'need' in c or 'potreb' in c), None)
         col_nome = next((c for c in df2.columns if 'azienda' in c or 'company' in c or 'podjet' in c), None)
+        col_code = find_code_column(df2.columns)
+
         if col_target:
-            totale_h2 = pd.to_numeric(df2[col_target], errors='coerce').fillna(0).sum()
-            n_aziende = int((pd.to_numeric(df2[col_target], errors='coerce').fillna(0) > 0).sum())
+            valori = pd.to_numeric(df2[col_target], errors='coerce').fillna(0)
+            # si esportano solo le aziende con fabbisogno effettivo, nello stesso ordine
+            idonee = df2[valori > 0].copy()
+            idonee["_fabbisogno"] = valori[valori > 0].values
+
+            totale_h2 = float(valori.sum())
+            n_aziende = int(len(idonee))
+
             if col_nome:
-                nomi_aziende = "; ".join(df2[col_nome].astype(str).tolist())
+                nomi_aziende = "; ".join(idonee[col_nome].astype(str).str.strip())
+            if col_code:
+                ateco_aziende = "; ".join(idonee[col_code].astype(str).str.strip())
+            fabbisogni_aziende = "; ".join(f"{v:.1f}" for v in idonee["_fabbisogno"])
+
             st.metric("H2 ton/anno", f"{totale_h2:,.1f}")
     except Exception as e:
         st.error(f"Errore: {e}")
 
-st.info(_t["info_template2"])
-st.download_button(_t["btn_template2"], generate_template_fase2(LANG), "template_fabbisogni.xlsx")
+# n_aziende = 0
+# totale_h2 = 0.0
+# nomi_aziende = ""
+
+# if uploaded_file_2:
+#     try:
+#         df2 = pd.read_excel(uploaded_file_2) if uploaded_file_2.name.endswith('.xlsx') else pd.read_csv(uploaded_file_2)
+#         df2.columns = df2.columns.str.strip().str.lower()
+#         st.success("✅ Dati Fabbisogni caricati!")
+#         st.dataframe(df2, use_container_width=True)
+
+#         # Colonna fabbisogno e colonna nome rilevate in modo language-agnostic
+#         col_target = next((c for c in df2.columns if 'fabbisogno' in c or 'need' in c or 'potreb' in c), None)
+#         col_nome = next((c for c in df2.columns if 'azienda' in c or 'company' in c or 'podjet' in c), None)
+#         if col_target:
+#             totale_h2 = pd.to_numeric(df2[col_target], errors='coerce').fillna(0).sum()
+#             n_aziende = int((pd.to_numeric(df2[col_target], errors='coerce').fillna(0) > 0).sum())
+#             if col_nome:
+#                 nomi_aziende = "; ".join(df2[col_nome].astype(str).tolist())
+#             st.metric("H2 ton/anno", f"{totale_h2:,.1f}")
+#     except Exception as e:
+#         st.error(f"Errore: {e}")
+
+# st.info(_t["info_template2"])
+# st.download_button(_t["btn_template2"], generate_template_fase2(LANG), "template_fabbisogni.xlsx")
 
 # ==========================================
 # 10. ESPORTAZIONE (Codice Identificativo)
@@ -1043,7 +1080,9 @@ if st.button(_t["btn_export"]):
             "ID_ISTAT": id_identificativo,
             "T21_N_AZIENDE_IDONEE": n_aziende,
             "T21_NOMI_AZIENDE": nomi_aziende,
-            "T21_FABBISOGNO_H2_TON_ANNO": round(float(totale_h2), 2)
+            "T21_FABBISOGNO_H2_TON_ANNO": round(float(totale_h2), 2),
+            "T21_ATECO_AZIENDE": ateco_aziende,
+            "T21_FABBISOGNI_AZIENDE": fabbisogni_aziende,
         }
         GOOGLE_URL = "https://script.google.com/macros/s/AKfycbwpP0x0hBnhOadXA43IieWg9EusAuhaafpyeXpyaStssDd7Qo-jwnuOttAllzz8r5JS/exec"
         try:
