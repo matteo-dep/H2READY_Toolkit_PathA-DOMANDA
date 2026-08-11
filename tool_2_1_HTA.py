@@ -969,6 +969,10 @@ if uploaded_file_1:
             # Ordinamento per livello (tier) e poi punteggio
             tier_rank = {"absolute": 0, "necessary": 1, "optional": 2, "alert": 3, "waste": 4}
             results.sort(key=lambda x: (tier_rank[x["tier"]], -x["total"]))
+            # la classificazione della Fase 1 serve alla Fase 2: si conserva in sessione
+            st.session_state["famiglie_fase1"] = {
+                r["name"].strip().lower(): r["family"] for r in results
+            }
 
             st.success("✅ File Fase 1 analizzato!")
             c1, c2 = st.columns(2)
@@ -1008,6 +1012,7 @@ totale_h2 = 0.0
 nomi_aziende = ""
 ateco_aziende = ""
 fabbisogni_aziende = ""
+famiglie_aziende = ""
 
 if uploaded_file_2:
     try:
@@ -1022,7 +1027,7 @@ if uploaded_file_2:
 
         if col_target:
             valori = pd.to_numeric(df2[col_target], errors='coerce').fillna(0)
-            # si esportano solo le aziende con fabbisogno effettivo, nello stesso ordine
+            # si esporta solo chi ha un fabbisogno effettivo, mantenendo l'ordine
             idonee = df2[valori > 0].copy()
             idonee["_fabbisogno"] = valori[valori > 0].values
 
@@ -1030,12 +1035,33 @@ if uploaded_file_2:
             n_aziende = int(len(idonee))
 
             if col_nome:
-                nomi_aziende = "; ".join(idonee[col_nome].astype(str).str.strip())
+                nomi = idonee[col_nome].astype(str).str.strip().tolist()
+                nomi_aziende = "; ".join(nomi)
+            else:
+                nomi = []
+
             if col_code:
                 ateco_aziende = "; ".join(idonee[col_code].astype(str).str.strip())
+
             fabbisogni_aziende = "; ".join(f"{v:.1f}" for v in idonee["_fabbisogno"])
 
+            # famiglia termodinamica: dalla Fase 1 se disponibile, altrimenti dal codice
+            mappa = st.session_state.get("famiglie_fase1", {})
+            famiglie = []
+            for i in range(len(idonee)):
+                nome_i = nomi[i].strip().lower() if i < len(nomi) else ""
+                fam = mappa.get(nome_i)
+                if not fam and col_code:
+                    code4 = normalize_code(idonee.iloc[i][col_code])
+                    _, _, fam = get_base_score(code4, "", LANG)
+                famiglie.append(fam or "none")
+            famiglie_aziende = "; ".join(famiglie)
+
             st.metric("H2 ton/anno", f"{totale_h2:,.1f}")
+            if not mappa:
+                st.info("ℹ️ Carica prima il file di Fase 1: la classificazione dei processi "
+                        "risulterà più precisa (per esempio distingue un ciclo DRI da un forno "
+                        "elettrico ad arco, che hanno lo stesso codice).")
     except Exception as e:
         st.error(f"Errore: {e}")
 
@@ -1083,6 +1109,7 @@ if st.button(_t["btn_export"]):
             "T21_FABBISOGNO_H2_TON_ANNO": round(float(totale_h2), 2),
             "T21_ATECO_AZIENDE": ateco_aziende,
             "T21_FABBISOGNI_AZIENDE": fabbisogni_aziende,
+            "T21_FAMIGLIE_AZIENDE": famiglie_aziende,
         }
         GOOGLE_URL = "https://script.google.com/macros/s/AKfycbwpP0x0hBnhOadXA43IieWg9EusAuhaafpyeXpyaStssDd7Qo-jwnuOttAllzz8r5JS/exec"
         try:
