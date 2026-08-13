@@ -34,7 +34,7 @@ import json
 # ==========================================================================
 
 st.set_page_config(page_title="H2READY toolkit - Tool 2.2 Simulatore Flotta", page_icon="🚗", layout="wide")
-st.title("🚗 H2READY: Simulatore Strategico di Flotta")
+st.title("🚗 H2READY TOOLKIT - Tool 2.2: Simulatore Strategico di Flotta")
 st.markdown("Confronto **Diesel / Elettrico / Idrogeno** con curve di proiezione tecnologica "
             "(2024-2035) per un'analisi dinamica del TCO e delle emissioni LCA.")
 
