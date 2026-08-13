@@ -683,6 +683,7 @@ if st.button(_t["e_btn"], type="primary"):
                 st.success(_t["e_ok"])
                 st.caption(resp.text)
                 st.balloons()
+                H.dopo_salvataggio(comune, lingua=LANG)      # <-- aggiungere
             else:
                 st.error(_t["e_err"].format(c=resp.status_code))
         except requests.exceptions.ReadTimeout:
