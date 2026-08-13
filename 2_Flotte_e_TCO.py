@@ -33,7 +33,7 @@ import json
 # vettori e fattori di emissione, coerenti tra loro e con la fisica.
 # ==========================================================================
 
-st.set_page_config(page_title="H2READY · Simulatore Flotta", page_icon="🚗", layout="wide")
+st.set_page_config(page_title="H2READY toolkit - Tool 2.2 Simulatore Flotta", page_icon="🚗", layout="wide")
 st.title("🚗 H2READY: Simulatore Strategico di Flotta")
 st.markdown("Confronto **Diesel / Elettrico / Idrogeno** con curve di proiezione tecnologica "
             "(2024-2035) per un'analisi dinamica del TCO e delle emissioni LCA.")
