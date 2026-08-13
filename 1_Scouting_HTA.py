@@ -1117,5 +1117,6 @@ if st.button(_t["btn_export"]):
             if response.status_code == 200:
                 st.success(_t["export_success"])
                 st.balloons()
+                H.dopo_salvataggio(comune, lingua=LANG)      # <-- aggiungere
         except Exception:
             st.error("Errore di connessione.")
