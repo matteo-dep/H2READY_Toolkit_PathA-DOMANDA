@@ -33,7 +33,7 @@ LANG = LANG_OPTIONS[lang_choice]
 
 T = {
     "it": {
-        "title": "🔥 Confronto sistemi di riscaldamento",
+        "title": "🔥 H2READY TOOLKIT - Tool 2.4: Confronto sistemi di riscaldamento",
         "subtitle": "Quanto costa, quanto inquina e quanta energia serve per scaldare un edificio, a parità di calore prodotto.",
         "credits": "H2READY Toolkit · Tool 2.4 — sviluppato nel progetto [INTERREG H2Ready](https://www.ita-slo.eu/en/h2ready) da **Matteo De Piccoli - [APE FVG](https://www.ape.fvg.it/)**",
         "scope_title": "ℹ️ Che cosa confronta questo strumento",
