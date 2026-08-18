@@ -354,12 +354,16 @@ CSS = """
 # 4. SIDEBAR
 # ==========================================================================
 st.sidebar.markdown(f"### {_t['case']}")
-user_fabbisogno = st.sidebar.slider(_t["fabbisogno"], 2000, 50000, 10000, 1000, help=_t["fabbisogno_help"])
+#user_fabbisogno = st.sidebar.slider(_t["fabbisogno"], 2000, 50000, 10000, 1000, help=_t["fabbisogno_help"])
+user_fabbisogno = st.sidebar.slider(
+    _t["fabbisogno"], 2000, 50000,
+    int(H.valore(comune, "T24_FABBISOGNO_TERMICO_KWH_ANNO", 10000,
+                 minimo=2000, massimo=50000)), 1000, help=_t["fabbisogno_help"])
 user_lifetime = st.sidebar.slider(_t["lifetime"], 1, 30, 20, 1)
 user_cop = st.sidebar.number_input(_t["cop"], value=3.0, step=0.1, help=_t["cop_help"])
 
 with st.sidebar.expander(_t["pv"], expanded=False):
-    pv_yield = st.number_input(_t["pv_yield"], 800, 1600, 1150, 25, help=_t["pv_yield_help"])
+    pv_yield = st.number_input(_t["pv_yield"], 800, 1600, 1200, 25, help=_t["pv_yield_help"])
     pv_area_kwp = st.number_input(_t["pv_area"], 3.0, 15.0, 5.0, 0.5, help=_t["pv_area_help"])
 
 with st.sidebar.expander(_t["macro_sb"], expanded=False):
@@ -672,28 +676,60 @@ sol_pulita = f'{df.loc[idx_clean, "Nome"]} · {df.loc[idx_clean, "Vettore"]}'
 
 codice = st.text_input(_t["e_id"], key="id_calore")
 
+# if st.button(_t["e_btn"], type="primary"):
+#     if not codice:
+#         st.error(_t["e_noid"])
+#     else:
+#         payload = {
+#             "ID_ISTAT": codice,
+#             "T24_FABBISOGNO_TERMICO_KWH_ANNO": int(user_fabbisogno),
+#             "T24_SOLUZIONE_OTTIMALE": sol_economica,
+#             "T24_SOLUZIONE_PIU_PULITA": sol_pulita,
+#             "T24_EMISSIONI_EVITATE_KGCO2_ANNO": round(r_gas["Emiss"] - df.loc[idx_clean, "Emiss"], 0),
+#         }
+#         try:
+#             resp = requests.post(WEBHOOK_URL, data=json.dumps(payload),
+#                                  headers={"Content-Type": "application/json"}, timeout=60)
+#             if resp.status_code in (200, 201):
+#                 st.success(_t["e_ok"])
+#                 st.caption(resp.text)
+#                 st.balloons()
+#                 H.dopo_salvataggio(comune, lingua=LANG)      # <-- aggiungere
+#             else:
+#                 st.error(_t["e_err"].format(c=resp.status_code))
+#         except requests.exceptions.ReadTimeout:
+#             st.warning(_t["e_timeout"])
+#         except Exception as e:
+#             st.error(_t["e_conn"].format(e=e))
+
+codice = H.testo(comune, H.COL_ID)
+st.caption(f"I dati verranno associati a {H.testo(comune, H.COL_NOME)} (ID {codice}).")
+
 if st.button(_t["e_btn"], type="primary"):
-    if not codice:
-        st.error(_t["e_noid"])
-    else:
-        payload = {
-            "ID_ISTAT": codice,
-            "T24_FABBISOGNO_TERMICO_KWH_ANNO": int(user_fabbisogno),
-            "T24_SOLUZIONE_OTTIMALE": sol_economica,
-            "T24_SOLUZIONE_PIU_PULITA": sol_pulita,
-            "T24_EMISSIONI_EVITATE_KGCO2_ANNO": round(r_gas["Emiss"] - df.loc[idx_clean, "Emiss"], 0),
-        }
-        try:
-            resp = requests.post(WEBHOOK_URL, data=json.dumps(payload),
-                                 headers={"Content-Type": "application/json"}, timeout=60)
-            if resp.status_code in (200, 201):
-                st.success(_t["e_ok"])
-                st.caption(resp.text)
-                st.balloons()
-                H.dopo_salvataggio(comune, lingua=LANG)      # <-- aggiungere
-            else:
-                st.error(_t["e_err"].format(c=resp.status_code))
-        except requests.exceptions.ReadTimeout:
-            st.warning(_t["e_timeout"])
-        except Exception as e:
-            st.error(_t["e_conn"].format(e=e))
+    payload = {
+        "ID_ISTAT": codice,
+        "T24_FABBISOGNO_TERMICO_KWH_ANNO": int(user_fabbisogno),
+        "T24_SOLUZIONE_OTTIMALE": sol_economica,
+        "T24_SOLUZIONE_PIU_PULITA": sol_pulita,
+        "T24_EMISSIONI_EVITATE_KGCO2_ANNO": round(r_gas["Emiss"] - df.loc[idx_clean, "Emiss"], 0),
+    }
+    salvato = False
+    try:
+        resp = requests.post(WEBHOOK_URL, data=json.dumps(payload),
+                             headers={"Content-Type": "application/json"}, timeout=60)
+        if resp.status_code in (200, 201):
+            st.success(_t["e_ok"])
+            st.caption(resp.text)
+            st.balloons()
+            salvato = True
+        else:
+            st.error(_t["e_err"].format(c=resp.status_code))
+    except requests.exceptions.ReadTimeout:
+        st.warning(_t["e_timeout"])
+        salvato = True
+    except Exception as e:
+        st.error(_t["e_conn"].format(e=e))
+
+    if salvato:
+        H.dopo_salvataggio(comune, lingua=LANG)
+        H.dopo_salvataggio(comune, lingua=LANG)
