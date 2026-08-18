@@ -31,6 +31,13 @@ LANG_OPTIONS = {"Italiano": "it", "English": "en", "Slovenščina": "sl"}
 lang_choice = st.sidebar.selectbox("🌐 Lingua / Language / Jezik", list(LANG_OPTIONS.keys()))
 LANG = LANG_OPTIONS[lang_choice]
 
+import h2ready as H
+
+comune = H.blocco_accesso("Tool 2.1 — Scouting aziende HTA",   # o 2.4
+                          percorso="A", lingua=LANG)
+if comune is None:
+    st.stop()
+
 T = {
     "it": {
         "title": "🔥 H2READY TOOLKIT - Tool 2.4: Confronto sistemi di riscaldamento",
