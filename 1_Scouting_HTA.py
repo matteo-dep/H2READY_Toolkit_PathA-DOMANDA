@@ -18,6 +18,16 @@ LANG_OPTIONS = {"Italiano": "it", "English": "en", "Slovenščina": "sl"}
 lang_choice = st.sidebar.selectbox("🌐 Lingua / Language / Jezik", list(LANG_OPTIONS.keys()))
 LANG = LANG_OPTIONS[lang_choice]
 
+import h2ready as H
+
+comune = H.blocco_accesso("Tool 2.1 — Scouting aziende HTA",   # o 2.4
+                          percorso="A", lingua=LANG)
+
+H.intestazione_comune(comune, "Tool 2.1 · Scouting delle utenze industriali")
+
+if comune is None:
+    st.stop()
+
 # ==========================================
 # 2. SISTEMA DI CLASSIFICAZIONE PER LINGUA
 #    IT -> ATECO | EN -> NACE | SL -> SKD
@@ -1065,58 +1075,46 @@ if uploaded_file_2:
     except Exception as e:
         st.error(f"Errore: {e}")
 
-# n_aziende = 0
-# totale_h2 = 0.0
-# nomi_aziende = ""
+    st.info(_t["info_template2"])
+    st.download_button(_t["btn_template2"], generate_template_fase2(LANG), "template_fabbisogni.xlsx")
 
-# if uploaded_file_2:
-#     try:
-#         df2 = pd.read_excel(uploaded_file_2) if uploaded_file_2.name.endswith('.xlsx') else pd.read_csv(uploaded_file_2)
-#         df2.columns = df2.columns.str.strip().str.lower()
-#         st.success("✅ Dati Fabbisogni caricati!")
-#         st.dataframe(df2, use_container_width=True)
-
-#         # Colonna fabbisogno e colonna nome rilevate in modo language-agnostic
-#         col_target = next((c for c in df2.columns if 'fabbisogno' in c or 'need' in c or 'potreb' in c), None)
-#         col_nome = next((c for c in df2.columns if 'azienda' in c or 'company' in c or 'podjet' in c), None)
-#         if col_target:
-#             totale_h2 = pd.to_numeric(df2[col_target], errors='coerce').fillna(0).sum()
-#             n_aziende = int((pd.to_numeric(df2[col_target], errors='coerce').fillna(0) > 0).sum())
-#             if col_nome:
-#                 nomi_aziende = "; ".join(df2[col_nome].astype(str).tolist())
-#             st.metric("H2 ton/anno", f"{totale_h2:,.1f}")
-#     except Exception as e:
-#         st.error(f"Errore: {e}")
-
-# st.info(_t["info_template2"])
-# st.download_button(_t["btn_template2"], generate_template_fase2(LANG), "template_fabbisogni.xlsx")
 
 # ==========================================
 # 10. ESPORTAZIONE (Codice Identificativo)
 # ==========================================
-st.divider()
-st.subheader("🔗 Esportazione Dati")
-id_identificativo = st.text_input(_t["input_id"])
+
+id_identificativo = H.testo(comune, H.COL_ID)
+st.caption(f"I dati verranno associati a {H.testo(comune, H.COL_NOME)} "
+           f"(ID {id_identificativo}).")
 
 if st.button(_t["btn_export"]):
-    if not id_identificativo:
-        st.error("Inserisci il Codice Identificativo!")
-    else:
-        payload = {
-            "ID_ISTAT": id_identificativo,
-            "T21_N_AZIENDE_IDONEE": n_aziende,
-            "T21_NOMI_AZIENDE": nomi_aziende,
-            "T21_FABBISOGNO_H2_TON_ANNO": round(float(totale_h2), 2),
-            "T21_ATECO_AZIENDE": ateco_aziende,
-            "T21_FABBISOGNI_AZIENDE": fabbisogni_aziende,
-            "T21_FAMIGLIE_AZIENDE": famiglie_aziende,
-        }
-        GOOGLE_URL = "https://script.google.com/macros/s/AKfycbwpP0x0hBnhOadXA43IieWg9EusAuhaafpyeXpyaStssDd7Qo-jwnuOttAllzz8r5JS/exec"
-        try:
-            response = requests.post(GOOGLE_URL, data=json.dumps(payload), headers={'Content-Type': 'application/json'})
-            if response.status_code == 200:
-                st.success(_t["export_success"])
-                st.balloons()
-                H.dopo_salvataggio(comune, lingua=LANG)      # <-- aggiungere
-        except Exception:
-            st.error("Errore di connessione.")
+    payload = {
+        "ID_ISTAT": id_identificativo,
+        "T21_N_AZIENDE_IDONEE": n_aziende,
+        "T21_NOMI_AZIENDE": nomi_aziende,
+        "T21_FABBISOGNO_H2_TON_ANNO": round(float(totale_h2), 2),
+        "T21_ATECO_AZIENDE": ateco_aziende,
+        "T21_FABBISOGNI_AZIENDE": fabbisogni_aziende,
+        "T21_FAMIGLIE_AZIENDE": famiglie_aziende,
+    }
+    GOOGLE_URL = "https://script.google.com/macros/s/AKfycbwpP0x0hBnhOadXA43IieWg9EusAuhaafpyeXpyaStssDd7Qo-jwnuOttAllzz8r5JS/exec"
+    salvato = False
+    try:
+        response = requests.post(GOOGLE_URL, data=json.dumps(payload),
+                                 headers={'Content-Type': 'application/json'}, timeout=60)
+        if response.status_code in (200, 201):
+            st.success(_t["export_success"])
+            st.caption(f"Risposta del server: {response.text}")
+            st.balloons()
+            salvato = True
+        else:
+            st.error(f"Errore di sincronizzazione (codice {response.status_code})")
+    except requests.exceptions.ReadTimeout:
+        st.warning("⏳ Il server non ha risposto in tempo. Quasi sempre significa che i "
+                   "dati sono stati scritti: controlla il foglio prima di ripetere l'invio.")
+        salvato = True
+    except Exception as e:
+        st.error(f"Errore di connessione: {e}")
+
+    if salvato:
+        H.dopo_salvataggio(comune, lingua=LANG)
