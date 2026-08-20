@@ -714,22 +714,17 @@ if st.button(_t["e_btn"], type="primary"):
         "T24_EMISSIONI_EVITATE_KGCO2_ANNO": round(r_gas["Emiss"] - df.loc[idx_clean, "Emiss"], 0),
     }
     salvato = False
+  
     try:
         resp = requests.post(WEBHOOK_URL, data=json.dumps(payload),
-                             headers={"Content-Type": "application/json"}, timeout=60)
+                                 headers={"Content-Type": "application/json"}, timeout=60)
         if resp.status_code in (200, 201):
-            st.success(_t["e_ok"])
-            st.caption(resp.text)
-            st.balloons()
-            salvato = True
+                st.success(_t["e_ok"])
+                st.caption(resp.text)
+                st.balloons()
         else:
-            st.error(_t["e_err"].format(c=resp.status_code))
-    except requests.exceptions.ReadTimeout:
-        st.warning(_t["e_timeout"])
-        salvato = True
-    except Exception as e:
-        st.error(_t["e_conn"].format(e=e))
-
-    if salvato:
-        H.dopo_salvataggio(comune, lingua=LANG)
-        H.dopo_salvataggio(comune, lingua=LANG)
+                st.error(_t["e_err"].format(c=resp.status_code))
+      except requests.exceptions.ReadTimeout:
+            st.warning(_t["e_timeout"])
+      except Exception as e:
+            st.error(_t["e_conn"].format(e=e))
