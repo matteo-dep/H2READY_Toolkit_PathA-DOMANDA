@@ -558,10 +558,10 @@ if st.button("💾 Esporta nel database centrale", type="primary"):
         try:
             resp = requests.post(WEBHOOK_URL, data=json.dumps(payload),
                                  headers={"Content-Type": "application/json"}, timeout=20)
-            if response.status_code == 200:
-                st.success(_t["export_success"])
+            if resp.status_code in (200, 201):
+                st.success("✅ Dati trasmessi correttamente al database centrale.")
+                st.caption(f"Risposta del server: {resp.text}")
                 st.balloons()
-                H.dopo_salvataggio(comune, lingua=LANG)      # <-- aggiungere
             else:
                 st.error(f"Errore di sincronizzazione (codice {resp.status_code})")
         except Exception as e:
