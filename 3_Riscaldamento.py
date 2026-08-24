@@ -3,6 +3,7 @@ H2READY TOOLKIT - Tool 2.4: Confronto sistemi di riscaldamento
 Progetto Interreg Italia-Slovenia H2READY - APE FVG
 Autore: Matteo De Piccoli
 
+
 Struttura della pagina, nell'ordine:
   1. VERDETTO   - elettrico contro idrogeno, entrambi autoprodotti da rinnovabile
   2. GAP        - distanza dalla caldaia a metano, in euro e in CO2
@@ -10,10 +11,12 @@ Struttura della pagina, nell'ordine:
   4. MACRO      - la stessa scelta ripetuta su piu' edifici
   5. EXPORT     - trasmissione all'excelone
 
+
 Schede di confronto: superfici piatte senza bordo, un solo numero grande per
 scheda (quello su cui si sta ordinando) e tinta chiara riservata alle soluzioni
 migliori per costo ed emissioni. Il colore lavora una volta sola, dove serve.
 """
+
 
 import os
 import json
@@ -21,8 +24,10 @@ import requests
 import pandas as pd
 import streamlit as st
 
+
 st.set_page_config(page_title="H2READY · Tool 2.4 Riscaldamento",
                    page_icon="🔥", layout="wide")
+
 
 # ==========================================================================
 # 1. LINGUA
@@ -31,12 +36,43 @@ LANG_OPTIONS = {"Italiano": "it", "English": "en", "Slovenščina": "sl"}
 lang_choice = st.sidebar.selectbox("🌐 Lingua / Language / Jezik", list(LANG_OPTIONS.keys()))
 LANG = LANG_OPTIONS[lang_choice]
 
+
 import h2ready as H
+
+
+# ==========================================================================
+# 1-bis. RIENTRO AL MENU H2READY
+#        Presente solo nei tool 2.1, 2.2 e 2.4: il collegamento vive nei
+#        singoli file e non in h2ready.py, cosi' non compare negli altri.
+# ==========================================================================
+LINKTREE_URL = "https://h2-master-lknejybcxqbj7anywxjr8c.streamlit.app/"
+_LBL_HOME = {"it": "⬅️ Torna al menu H2READY",
+             "en": "⬅️ Back to the H2READY menu",
+             "sl": "⬅️ Nazaj na meni H2READY"}
+
+
+def barra_ritorno(lang_code="it"):
+    """Rientro al linktree: pulsante in sidebar e link in alto a destra."""
+    _lbl = _LBL_HOME.get(lang_code, _LBL_HOME["it"])
+    try:
+        st.sidebar.link_button(_lbl, LINKTREE_URL, use_container_width=True)
+    except AttributeError:          # Streamlit < 1.28: resta il solo link HTML
+        pass
+    st.markdown(
+        f"<div style='text-align:right; margin-top:-0.5rem; margin-bottom:0.5rem;'>"
+        f"<a href='{LINKTREE_URL}' target='_self' "
+        f"style='text-decoration:none; font-size:0.85rem; color:gray;'>{_lbl}</a>"
+        f"</div>", unsafe_allow_html=True)
+
+
+barra_ritorno(LANG)
+
 
 comune = H.blocco_accesso("🔥 H2READY TOOLKIT - Tool 2.4: Confronto sistemi di riscaldamento",   # o 2.4
                           percorso="A", lingua=LANG)
 if comune is None:
     st.stop()
+
 
 T = {
     "it": {
@@ -48,6 +84,7 @@ T = {
 Il confronto è **a parità di calore consegnato**: ogni soluzione è dimensionata per
 produrre lo stesso numero di kWh termici. Ogni voce comprende acquisto ripartito sugli
 anni di vita, manutenzione, vettore energetico ed emissioni di filiera, camino e costruzione.
+
 
 **La legna a ciocchi non è compresa.** Costo ed emissioni dipendono da troppe variabili
 non generalizzabili: umidità del legno, distanza di trasporto, autoconsumo o acquisto,
@@ -127,6 +164,7 @@ The comparison is made **at equal heat delivered**: every option is sized to pro
 same thermal kWh. Each entry includes purchase spread over lifetime, maintenance, energy
 carrier, and supply-chain, stack and construction emissions.
 
+
 **Firewood logs are excluded.** Cost and emissions depend on too many variables that
 cannot be generalised: moisture, transport distance, self-supply, manual operation.
 Pellet is included, being standardised.
@@ -200,6 +238,7 @@ Primerjava poteka **ob enaki dobavljeni toploti**: vsaka rešitev je dimenzionir
 enako količino toplotnih kWh. Vsaka postavka vključuje nabavo, porazdeljeno na leta,
 vzdrževanje, energent ter emisije dobavne verige, dimnika in izdelave.
 
+
 **Polena niso vključena.** Strošek in emisije so odvisni od preveč spremenljivk:
 vlažnost, razdalja prevoza, lastna oskrba, ročno upravljanje. Peleti so vključeni, ker
 so standardizirani.
@@ -266,13 +305,16 @@ so standardizirani.
 }
 _t = T[LANG]
 
+
 # ==========================================================================
 # 2. DATI INCORPORATI (fabbisogno base 10.000 kWh/anno)
 # ==========================================================================
 ICONS = {"boiler_oil": "🛢️", "boiler_gas": "🔥", "stove_pellet": "🪵",
          "heat_pump": "♨️", "boiler_h2": "💧"}
 
+
 LHV_H2 = 33.33  # kWh per kg di idrogeno
+
 
 TECHNOLOGIES = [
     {"type": "boiler_oil",   "vector": "oil",      "eta_cop": 0.9, "consumo_base": 11111.111111, "en_prim_base": 12771.392082, "wtt_base": 444.305319,  "ttw_base": 2962.035457, "constr": 1200, "maint": 225.0,      "capex": 3500,  "fuel_key": "diesel",        "is_pdc": False},
@@ -284,6 +326,7 @@ TECHNOLOGIES = [
     {"type": "boiler_h2",    "vector": "h2_grid",  "eta_cop": 0.9, "consumo_base": 11111.111111, "en_prim_base": 40404.040404, "wtt_base": 4300.430043, "ttw_base": 0.000000,    "constr": 1200, "maint": 509.090909, "capex": 7000,  "fuel_key": "h2_rete",       "is_pdc": False},
     {"type": "boiler_h2",    "vector": "h2_green", "eta_cop": 0.9, "consumo_base": 11111.111111, "en_prim_base": 17921.146953, "wtt_base": 1000.100010, "ttw_base": 0.000000,    "constr": 1200, "maint": 509.090909, "capex": 7000,  "fuel_key": "h2_verde_auto", "is_pdc": False},
 ]
+
 
 FUELS = {
     "diesel":        {"natura": 1.8,  "factor": 0.10097848148559},
@@ -298,6 +341,7 @@ FUELS = {
 FUEL_UNITS = {"diesel": "€/l", "metano": "€/Sm³", "pellet": "€/sacco",
               "elc_rete": "€/kWh", "elc_auto": "€/kWh",
               "h2_grigio": "€/kg", "h2_rete": "€/kg", "h2_verde_auto": "€/kg"}
+
 
 # ==========================================================================
 # 3. STILE
@@ -350,6 +394,7 @@ CSS = """
 </style>
 """
 
+
 # ==========================================================================
 # 4. SIDEBAR
 # ==========================================================================
@@ -362,12 +407,15 @@ user_fabbisogno = st.sidebar.slider(
 user_lifetime = st.sidebar.slider(_t["lifetime"], 1, 30, 20, 1)
 user_cop = st.sidebar.number_input(_t["cop"], value=3.0, step=0.1, help=_t["cop_help"])
 
+
 with st.sidebar.expander(_t["pv"], expanded=False):
     pv_yield = st.number_input(_t["pv_yield"], 800, 1600, 1200, 25, help=_t["pv_yield_help"])
     pv_area_kwp = st.number_input(_t["pv_area"], 3.0, 15.0, 5.0, 0.5, help=_t["pv_area_help"])
 
+
 with st.sidebar.expander(_t["macro_sb"], expanded=False):
     n_edifici = st.number_input(_t["n_edifici"], 1, 5000, 20, 1)
+
 
 prezzi_kwh = {}
 with st.sidebar.expander(_t["prices"], expanded=False):
@@ -375,6 +423,7 @@ with st.sidebar.expander(_t["prices"], expanded=False):
         val = st.number_input(f"{_t['fuels'][key]} [{FUEL_UNITS[key]}]",
                               value=float(f["natura"]), format="%.3f", key=f"fuel_{key}")
         prezzi_kwh[key] = val * f["factor"]
+
 
 # ==========================================================================
 # 5. MOTORE
@@ -400,23 +449,33 @@ def calcola(t):
     }
 
 
+
+
 df = pd.DataFrame([calcola(t) for t in TECHNOLOGIES])
 df["Label"] = df["Nome"] + " · " + df["Vettore"]
 
+
 idx_cheap = df["Costo"].idxmin()
 idx_clean = df["Emiss"].idxmin()
+
 
 r_pdc = df[(df["type"] == "heat_pump") & (df["vector"] == "elc_self")].iloc[0]
 r_h2 = df[(df["type"] == "boiler_h2") & (df["vector"] == "h2_green")].iloc[0]
 r_gas = df[df["type"] == "boiler_gas"].iloc[0]
 
 
+
+
 def fmt(v):
     return f"{v:,.0f}".replace(",", ".")
 
 
+
+
 def fmt1(v):
     return f"{v:,.1f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
 
 
 def lerp(frac):
@@ -434,6 +493,8 @@ def lerp(frac):
     return f"#{r:02X}{g:02X}{b:02X}"
 
 
+
+
 # ==========================================================================
 # 6. INTESTAZIONE
 # ==========================================================================
@@ -442,6 +503,7 @@ st.title(_t["title"])
 st.markdown(f"<div class='h4-sub'>{_t['subtitle']}</div>", unsafe_allow_html=True)
 st.caption(_t["credits"])
 
+
 with st.expander(_t["scope_title"], expanded=False):
     st.markdown(_t["scope_md"])
     if os.path.exists("ReadMe_calore.md"):
@@ -449,12 +511,14 @@ with st.expander(_t["scope_title"], expanded=False):
         with open("ReadMe_calore.md", "r", encoding="utf-8") as fh:
             st.markdown(fh.read())
 
+
 # ==========================================================================
 # 7. ① VERDETTO DI FATTIBILITA' OPERATIVA
 # ==========================================================================
 st.markdown("---")
 st.subheader(_t["v_title"])
 st.markdown(f"<div class='h4-sub'>{_t['v_sub']}</div>", unsafe_allow_html=True)
+
 
 # L'energia primaria delle filiere autoprodotte coincide con l'elettricita'
 # rinnovabile da generare: e' la base per dimensionare il fotovoltaico.
@@ -465,10 +529,14 @@ h2_kg = r_h2["Consumo"] / LHV_H2
 rapporto = el_h2 / el_pdc if el_pdc > 0 else 0
 
 
+
+
 def _vs_card(titolo, colore, righe):
     body = "".join(f"<div class='h4-vs-row'><span>{k}</span><b>{v}</b></div>" for k, v in righe)
     return (f"<div class='h4-vsc' style='border-top-color:{colore}'>"
             f"<h5>{titolo}</h5>{body}</div>")
+
+
 
 
 st.markdown(
@@ -487,6 +555,7 @@ st.markdown(
     ])
     + "</div>", unsafe_allow_html=True)
 
+
 if rapporto <= 1.5:
     st.markdown(f"<div class='h4-verdict h4-vd-ok'>{_t['v_ok'].format(a=fmt(area_h2))}</div>",
                 unsafe_allow_html=True)
@@ -496,7 +565,9 @@ else:
         f"{_t['v_ko'].format(r=fmt1(rapporto), a=fmt(area_h2), a2=fmt(area_pdc))}</div>",
         unsafe_allow_html=True)
 
+
 st.caption(_t["v_note"])
+
 
 # ==========================================================================
 # 8. ② GAP ANALYSIS RISPETTO AL METANO
@@ -505,6 +576,7 @@ st.markdown("---")
 st.subheader(_t["g_title"])
 st.markdown(f"<div class='h4-sub'>{_t['g_sub']}</div>", unsafe_allow_html=True)
 st.caption(f"{_t['g_ref']} — {fmt(r_gas['Costo'])} {_t['u_cost']} · {fmt(r_gas['Emiss'])} {_t['u_co2']}")
+
 
 gap = []
 for _, r in df.iterrows():
@@ -516,7 +588,9 @@ for _, r in df.iterrows():
     gap.append({"Label": r["Label"], "icon": r["icon"],
                 "d_costo": d_costo, "d_co2": d_co2, "eur_ton": eur_ton})
 
+
 gap = sorted(gap, key=lambda g: (g["eur_ton"] is None, g["eur_ton"] if g["eur_ton"] is not None else 0))
+
 
 righe_gap = []
 for g in gap:
@@ -532,8 +606,10 @@ for g in gap:
         _t["g_eur_ton"]: testo,
     })
 
+
 st.table(pd.DataFrame(righe_gap))
 st.caption(_t["g_legend"])
+
 
 # ==========================================================================
 # 9. ③ TUTTE LE SOLUZIONI A CONFRONTO
@@ -543,12 +619,16 @@ st.caption(_t["g_legend"])
 st.markdown("---")
 st.subheader(_t["c_title"])
 
+
 sort_map = {_t["sort_cost"]: ("Costo", False), _t["sort_co2"]: ("Emiss", False), _t["sort_eff"]: ("Eta", True)}
 sort_choice = st.radio(_t["sort_label"], list(sort_map.keys()), horizontal=True)
 sort_col, sort_desc = sort_map[sort_choice]
 df_sorted = df.sort_values(sort_col, ascending=not sort_desc)
 
+
 st.markdown(f"<div class='h4-note'>{_t['note']}</div>", unsafe_allow_html=True)
+
+
 
 
 def _valore_grande(r, colonna):
@@ -558,6 +638,8 @@ def _valore_grande(r, colonna):
     if colonna == "Emiss":
         return fmt(r["Emiss"]), _t["u_co2"]
     return f"{r['Eta']:.1f}".replace(".", ","), _t["m_eff"]
+
+
 
 
 def _altre_metriche(r, escluso):
@@ -572,9 +654,12 @@ def _altre_metriche(r, escluso):
     return " · ".join(voci)
 
 
+
+
 cards = ""
 for i, r in df_sorted.iterrows():
     is_best = i in (idx_cheap, idx_clean)
+
 
     flags = []
     if i == idx_cheap:
@@ -582,6 +667,7 @@ for i, r in df_sorted.iterrows():
     if i == idx_clean:
         flags.append(_t["badge_clean"])
     flag_html = f"<div class='h4c-flag'>{' · '.join(flags)}</div>" if flags else ""
+
 
     valore, unita = _valore_grande(r, sort_col)
     cards += (
@@ -595,7 +681,10 @@ for i, r in df_sorted.iterrows():
         f"</div>"
     )
 
+
 st.markdown(f"<div class='h4-grid'>{cards}</div>", unsafe_allow_html=True)
+
+
 
 
 def render_breakdown(data, segments, unit, sort_key):
@@ -622,6 +711,8 @@ def render_breakdown(data, segments, unit, sort_key):
     return legend + rows
 
 
+
+
 with st.expander(_t["detail"], expanded=True):
     st.markdown(f"**{_t['chart_cost']}**")
     st.markdown(render_breakdown(
@@ -632,6 +723,7 @@ with st.expander(_t["detail"], expanded=True):
         df, [("WtT", _t["leg_wtt"], "#46586B"), ("TtW", _t["leg_ttw"], "#C2521E"),
              ("Costruz", _t["leg_constr"], "#8A94A0")], _t["u_co2"], "Emiss"), unsafe_allow_html=True)
 
+
 with st.expander(_t["table"]):
     show = df.sort_values("Costo")[["Label", "En_Primaria", "Eta", "Emiss", "Costo"]].rename(columns={
         "Label": _t["c_tech"], "En_Primaria": _t["c_prim"], "Eta": _t["c_eff"],
@@ -640,12 +732,14 @@ with st.expander(_t["table"]):
                                     _t["c_em"]: "{:,.0f}", _t["c_cost"]: "€ {:,.0f}"}),
                  use_container_width=True)
 
+
 # ==========================================================================
 # 10. ④ ANALISI MACRO
 # ==========================================================================
 st.markdown("---")
 st.subheader(_t["mm_title"])
 st.markdown(f"<div class='h4-sub'>{_t['mm_sub'].format(n=n_edifici)}</div>", unsafe_allow_html=True)
+
 
 mc1, mc2 = st.columns(2)
 for col, (nome, riga, colore, h2m) in zip(
@@ -661,20 +755,26 @@ for col, (nome, riga, colore, h2m) in zip(
         if h2m > 0:
             st.metric(_t["mm_h2"], f"{fmt1(h2m * n_edifici / 1000)} ton/a")
 
+
 st.caption(_t["mm_hint"])
+
 
 # ==========================================================================
 # 11. ⑤ ESPORTAZIONE
 # ==========================================================================
 WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwpP0x0hBnhOadXA43IieWg9EusAuhaafpyeXpyaStssDd7Qo-jwnuOttAllzz8r5JS/exec"
 
+
 st.markdown("---")
 st.subheader(_t["e_title"])
+
 
 sol_economica = f'{df.loc[idx_cheap, "Nome"]} · {df.loc[idx_cheap, "Vettore"]}'
 sol_pulita = f'{df.loc[idx_clean, "Nome"]} · {df.loc[idx_clean, "Vettore"]}'
 
+
 codice = st.text_input(_t["e_id"], key="id_calore")
+
 
 # if st.button(_t["e_btn"], type="primary"):
 #     if not codice:
@@ -702,8 +802,10 @@ codice = st.text_input(_t["e_id"], key="id_calore")
 #         except Exception as e:
 #             st.error(_t["e_conn"].format(e=e))
 
+
 codice = H.testo(comune, H.COL_ID)
 st.caption(f"I dati verranno associati a {H.testo(comune, H.COL_NOME)} (ID {codice}).")
+
 
 if st.button(_t["e_btn"], type="primary"):
     payload = {
