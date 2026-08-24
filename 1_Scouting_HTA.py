@@ -9,24 +9,61 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.utils import get_column_letter
 
+
 # ==========================================
 # 1. CONFIGURAZIONE PAGINA E LINGUA
 # ==========================================
 st.set_page_config(page_title="H2READY TOOLKIT - Tool 2.1", layout="wide")
 
+
 LANG_OPTIONS = {"Italiano": "it", "English": "en", "Slovenščina": "sl"}
 lang_choice = st.sidebar.selectbox("🌐 Lingua / Language / Jezik", list(LANG_OPTIONS.keys()))
 LANG = LANG_OPTIONS[lang_choice]
 
+
 import h2ready as H
+
+
+# ==========================================
+# 1-bis. RIENTRO AL MENU H2READY
+#        Presente solo nei tool 2.1, 2.2 e 2.4: il collegamento vive nei
+#        singoli file e non in h2ready.py, cosi' non compare negli altri.
+# ==========================================
+LINKTREE_URL = "https://h2-master-lknejybcxqbj7anywxjr8c.streamlit.app/"
+_LBL_HOME = {"it": "⬅️ Torna al menu H2READY",
+             "en": "⬅️ Back to the H2READY menu",
+             "sl": "⬅️ Nazaj na meni H2READY"}
+
+
+def barra_ritorno(lang_code="it"):
+    """Rientro al linktree: pulsante in sidebar e link in alto a destra."""
+    _lbl = _LBL_HOME.get(lang_code, _LBL_HOME["it"])
+    try:
+        st.sidebar.link_button(_lbl, LINKTREE_URL, use_container_width=True)
+    except AttributeError:          # Streamlit < 1.28: resta il solo link HTML
+        pass
+    st.markdown(
+        f"<div style='text-align:right; margin-top:-0.5rem; margin-bottom:0.5rem;'>"
+        f"<a href='{LINKTREE_URL}' target='_self' "
+        f"style='text-decoration:none; font-size:0.85rem; color:gray;'>{_lbl}</a>"
+        f"</div>", unsafe_allow_html=True)
+
+
+barra_ritorno(LANG)
+
 
 comune = H.blocco_accesso("Tool 2.1 — Scouting aziende HTA",   # o 2.4
                           percorso="A", lingua=LANG)
 
-H.intestazione_comune(comune, "Tool 2.1 · Scouting delle utenze industriali")
 
+# L'intestazione va DOPO il controllo: con utente non identificato 'comune'
+# e' None e intestazione_comune andrebbe in errore invece di fermarsi.
 if comune is None:
     st.stop()
+
+
+H.intestazione_comune(comune, "Tool 2.1 · Scouting delle utenze industriali")
+
 
 # ==========================================
 # 2. SISTEMA DI CLASSIFICAZIONE PER LINGUA
@@ -35,6 +72,7 @@ if comune is None:
 # ==========================================
 # Nome del sistema di classificazione mostrato all'utente in base alla lingua
 CLASSIF_NAME = {"it": "ATECO", "en": "NACE", "sl": "SKD"}
+
 
 # --- DIZIONARIO CODICI HTA (4 cifre - Hard to Abate e RED III) ---
 # La CHIAVE (4 cifre) è identica nei 3 sistemi. Cambia solo la lingua della descrizione.
@@ -137,6 +175,7 @@ CODE_DESCRIPTIONS = {
     },
 }
 
+
 # --- DIZIONARIO MACRO (2 cifre - Fallback "a cascata") ---
 MACRO_DESCRIPTIONS = {
     "it": {
@@ -189,6 +228,7 @@ MACRO_DESCRIPTIONS = {
     },
 }
 
+
 # ==========================================
 # 3. DIZIONARIO INTERFACCIA (i18n)
 # ==========================================
@@ -201,13 +241,17 @@ T = {
 ### 🎯 Qual è il tuo obiettivo?
 Come referente dell'Ente, il tuo compito è **mappare le industrie del tuo territorio** per capire quali hanno *reale* necessità di passare all'idrogeno verde (es. acciaierie, vetrerie, chimica).
 
+
 **Segui questi 3 passaggi:**
+
 
 **🟢 FASE 1: Screening Iniziale**
 Carica il file di screening nella sezione dedicata. Il simulatore filtrerà le aziende idonee. Se non hai il file, scarica il template subito sotto l'area di caricamento in corrispondenza del comando "upload".
 
+
 **🟡 FASE 2: Consolidamento Fabbisogni**
 Inserisci le stime dei fabbisogni (tonnellate/anno) delle aziende risultate idonee. Anche qui, trovi il template dedicato in corrispondenza del comando "upload".
+
 
 **🔵 FASE 3: Esportazione**
 Inserisci il tuo **Codice Identificativo** (lo stesso utilizzato nei questionari 1.1 e 1.2) in fondo alla pagina e clicca "Salva" per inviare i dati al database centrale.
@@ -247,13 +291,17 @@ Inserisci il tuo **Codice Identificativo** (lo stesso utilizzato nei questionari
 ### 🎯 What is your goal?
 As an Entity representative, your task is to **map the industries in your area** to understand which ones have a *real* need for green hydrogen (e.g. steelworks, glassworks, chemicals).
 
+
 **Follow these 3 steps:**
+
 
 **🟢 PHASE 1: Initial Screening**
 Upload the screening file in the dedicated section. The simulator will filter eligible companies. If you don't have the file, download the template below the upload area.
 
+
 **🟡 PHASE 2: Needs Consolidation**
 Enter the estimated needs (tons/year) for the eligible companies. The template is available below the uploader.
+
 
 **🔵 PHASE 3: Export**
 Enter your **Identification Code** at the bottom of the page and click "Save".
@@ -292,13 +340,17 @@ Enter your **Identification Code** at the bottom of the page and click "Save".
 ### 🎯 Kakšen je vaš cilj?
 Kot predstavnik organa je vaša naloga **kartiranje industrij na vašem območju**, da ugotovite, katere imajo *resnično* potrebo po zelenem vodiku (npr. jeklarne, steklarne, kemična industrija).
 
+
 **Sledite tem 3 korakom:**
+
 
 **🟢 1. FAZA: Začetni pregled**
 Naložite datoteko za pregled v namenski razdelek. Simulator bo filtriral ustrezna podjetja. Če datoteke nimate, prenesite predlogo pod območjem za nalaganje.
 
+
 **🟡 2. FAZA: Konsolidacija potreb**
 Vnesite ocenjene potrebe (tone/leto) za ustrezna podjetja. Predloga je na voljo pod nalagalnikom.
+
 
 **🔵 3. FAZA: Izvoz**
 Na dnu strani vnesite svojo **Identifikacijsko kodo** in kliknite "Shrani".
@@ -332,6 +384,7 @@ Na dnu strani vnesite svojo **Identifikacijsko kodo** in kliknite "Shrani".
 }
 _t = T[LANG]
 
+
 # ==========================================
 # 4. FUNZIONI DI CLASSIFICAZIONE (TRONCAMENTO A 4 CIFRE)
 # ==========================================
@@ -341,6 +394,7 @@ def normalize_code(raw):
     digits = "".join(ch for ch in str(raw) if ch.isdigit())
     return digits[:4]
 
+
 def find_code_column(columns):
     """Trova la colonna del codice qualunque sia la lingua (ateco/nace/skd)."""
     for c in columns:
@@ -348,6 +402,7 @@ def find_code_column(columns):
         if "ateco" in cl or "nace" in cl or "skd" in cl:
             return c
     return None
+
 
 def describe_code(code4, lang):
     """Descrizione 'a cascata': 4 cifre -> macro 2 cifre -> alert.
@@ -362,11 +417,13 @@ def describe_code(code4, lang):
         return f"{label} {prefix}: {macro_db[prefix]}", False
     return {"it": "Codice non riconosciuto", "en": "Unrecognised code", "sl": "Neprepoznana koda"}[lang], False
 
+
 def get_base_score(code4, testo_tecnico, lang):
     """Logica termodinamica + RED III. Ritorna (score_base, esito_text, family)."""
     esiti = T[lang]["esiti"]
     prefix = code4[:2]
     tt = testo_tecnico.lower()
+
 
     # 1. SPRECO TERMODINAMICO (Score 0) - famiglie distinte per descrizione
     if code4 == '2011':
@@ -376,6 +433,7 @@ def get_base_score(code4, testo_tecnico, lang):
     if prefix in ['35', '38', '41', '42', '43'] or code4.startswith('63'):
         return 0, esiti["spreco"], "energy_waste"
 
+
     # 2. ASSOLUTAMENTE NECESSARIO (Feedstock / agente riducente)
     if code4 in ['2015', '2014'] or code4 == '1920':
         if any(k in tt for k in ['etilen', 'ethylen', 'plastic', 'plastik']):
@@ -384,17 +442,21 @@ def get_base_score(code4, testo_tecnico, lang):
     if code4 == '2410' and any(k in tt for k in ['dri', 'riduzione diretta', 'direct reduction', 'neposredna redukcija']):
         return 5, esiti["assoluto"], "dri"
 
+
     # 3. NECESSARIO PER LIMITI FISICI (Vetro)
     if code4 in ['2311', '2313']:
         return 4.5, esiti["limiti"], "glass"
+
 
     # 4. OPZIONALE / COMPETIZIONE (Calcinazione)
     if code4 in ['2351', '2352', '2320', '2332']:
         return 3, esiti["opzionale"], "calcination"
 
+
     # 5. ALERT ELETTRIFICAZIONE (Trattamenti termici / metallurgia)
     if code4 in ['2431', '2550', '2561', '2562'] or prefix == '24':
         return 2, esiti["alert"], "heattreat"
+
 
     # 6. Processo termico borderline (parole chiave)
     parole_chiave = ['metano', 'methane', 'metan', 'mw', 'forno', 'furnace', 'peč',
@@ -402,7 +464,10 @@ def get_base_score(code4, testo_tecnico, lang):
     if any(k in tt for k in parole_chiave) and prefix in ['25', '26', '27', '28', '33']:
         return 1.5, esiti["alert"], "borderline"
 
+
     return 0, esiti["non_class"], "none"
+
+
 
 
 def _row_get(row, *keys):
@@ -414,10 +479,14 @@ def _row_get(row, *keys):
     return ""
 
 
+
+
 def calculate_total_score(base, row, lang):
     """Versione compatibile: ritorna solo il punteggio totale."""
     total, _, _ = score_breakdown(base, row, lang)
     return total
+
+
 
 
 def score_breakdown(base, row, lang):
@@ -431,6 +500,7 @@ def score_breakdown(base, row, lang):
         mult, dim_lbl = 1.2, {"it": "Media", "en": "Medium", "sl": "Srednja"}[lang]
     else:
         mult, dim_lbl = 1.0, {"it": "Piccola", "en": "Small", "sl": "Mala"}[lang]
+
 
     score = base * mult
     yes_words = ['sì', 'si', 'yes', 'y', 'da']
@@ -453,6 +523,8 @@ def score_breakdown(base, row, lang):
     return round(score, 1), mult, bonuses
 
 
+
+
 # ==========================================
 # 4b. BASE DI CONOSCENZA PER LA VESTE GRAFICA
 # ==========================================
@@ -464,6 +536,7 @@ TEMP_PEAK = {
     '2444': 1200, '2451': 1400, '2452': 1600, '2453': 1650, '2550': 1200, '2561': 1100,
     '2562': 500, '3511': 1200, '3530': 500, '3821': 1100, '3822': 1200, '3832': 1500,
 }
+
 
 # Livelli (spettro di necessità) -> colore + etichetta per lingua
 TIER_META = {
@@ -479,6 +552,7 @@ FAMILY_TO_TIER = {
     "cracking": "waste", "smr": "waste", "byproduct": "waste",
     "energy_waste": "waste", "none": "waste",
 }
+
 
 # Descrizione approfondita del processo (processo + temperature + ruolo H2)
 PROCESS_DETAIL = {
@@ -539,6 +613,7 @@ PROCESS_DETAIL = {
     },
 }
 
+
 # Testi UI delle schede
 CARD_TXT = {
     "it": {"score": "Punteggio H2", "temp": "Temperatura di processo", "bonus": "Fattori applicati",
@@ -551,6 +626,7 @@ CARD_TXT = {
            "table": "📋 Pokaži celotno tabelo", "no_temp": "Temperatura ni v bazi",
            "dist": "Porazdelitev ocen"},
 }
+
 
 CARD_CSS = """
 <style>
@@ -593,6 +669,8 @@ CARD_CSS = """
 """
 
 
+
+
 def _heat_bar_html(code4, lang):
     temp = TEMP_PEAK.get(code4)
     if temp is None:
@@ -607,6 +685,8 @@ def _heat_bar_html(code4, lang):
         f'<div class="h2c-ticks"><span>0\u00B0C</span><span>850\u00B0C</span><span>1700\u00B0C</span></div>'
         f'</div>'
     )
+
+
 
 
 def render_company_card(item, lang):
@@ -638,6 +718,8 @@ def render_company_card(item, lang):
     )
 
 
+
+
 def render_summary_strip(results, lang):
     order = ["absolute", "necessary", "optional", "alert", "waste"]
     counts = {t: 0 for t in order}
@@ -650,6 +732,7 @@ def render_summary_strip(results, lang):
         pills += (f'<div class="h2-pill"><span class="h2-dot" style="background:{TIER_META[t]["color"]}"></span>'
                   f'<b>{counts[t]}</b>&nbsp;{TIER_META[t][lang]}</div>')
     return f'<div class="h2-wrap"><div class="h2-strip">{pills}</div></div>'
+
 
 # ==========================================
 # 5. INTESTAZIONE E CREDITI
@@ -665,6 +748,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 st.divider()
 
+
 # ==========================================
 # 6. ISTRUZIONI (MENU A TENDINA)
 # ==========================================
@@ -679,7 +763,9 @@ with st.expander(_t["instr_title"], expanded=True):
     else:
         st.caption(f"ℹ️ File di logica ({nome_file_logica}) non trovato nella cartella.")
 
+
 st.markdown("---")
+
 
 # ==========================================
 # 7. GENERATORI DI TEMPLATE (colonne dinamiche per lingua)
@@ -704,6 +790,7 @@ EXAMPLE_ROWS = [
     ("MicroElettronica Maniago S.r.l.","26.01",    "S", 12,  35,  "Z.I. Maniago",        False, False, 4200,   "r15"),
 ]
 
+
 # Valori categorici tradotti (devono combaciare con la logica di scoring)
 SIZE_LABEL = {"it": {"L": "Grande", "M": "Media", "S": "Piccola"},
               "en": {"L": "Large", "M": "Medium", "S": "Small"},
@@ -711,6 +798,7 @@ SIZE_LABEL = {"it": {"L": "Grande", "M": "Media", "S": "Piccola"},
 YESNO = {"it": {True: "Sì", False: "No"},
          "en": {True: "Yes", False: "No"},
          "sl": {True: "Da", False: "Ne"}}
+
 
 # Testo colonna "processo" per riga e lingua (le parole chiave sono multilingua)
 PROC_TEXT = {
@@ -731,6 +819,7 @@ PROC_TEXT = {
     "r15": {"it": "Saldatura e forno di reflow", "en": "Welding and reflow furnace", "sl": "Varjenje in reflow peč"},
 }
 
+
 # Testo colonna "note": qui indica l'esito atteso di ogni riga d'esempio
 NOTE_TEXT = {
     "r1":  {"it": "Assoluto: H2 agente riducente", "en": "Absolute: H2 reducing agent", "sl": "Nujno: H2 kot reducent"},
@@ -749,6 +838,7 @@ NOTE_TEXT = {
     "r14": {"it": "Spreco come input: SMR da sostituire", "en": "Waste as input: SMR to be replaced", "sl": "Odpadek kot vhod: SMR za zamenjavo"},
     "r15": {"it": "Codice fuori DB + parola termica -> verifica", "en": "Code outside DB + thermal keyword -> verify", "sl": "Koda izven baze + toplotna beseda -> preveri"},
 }
+
 
 # Testi del foglio Legenda
 LEGEND = {
@@ -827,11 +917,14 @@ LEGEND = {
 }
 
 
+
+
 def _build_workbook(cols, data_rows, lang, dropdown_map):
     """Costruisce un workbook formattato con header, bordi, dropdown e foglio Legenda."""
     wb = Workbook()
     ws = wb.active
     ws.title = "Template"
+
 
     header_fill = PatternFill("solid", fgColor="1F4E79")
     header_font = Font(name="Arial", bold=True, color="FFFFFF", size=11)
@@ -842,11 +935,13 @@ def _build_workbook(cols, data_rows, lang, dropdown_map):
     thin = Side(style="thin", color="D9D9D9")
     border = Border(left=thin, right=thin, top=thin, bottom=thin)
 
+
     ws.append(cols)
     for c in range(1, len(cols) + 1):
         cell = ws.cell(row=1, column=c)
         cell.fill, cell.font, cell.alignment, cell.border = header_fill, header_font, center, border
     ws.row_dimensions[1].height = 32
+
 
     text_left_cols = {1, 6, 10}   # nome, ubicazione, processo
     note_col = len(cols)          # ultima colonna = note
@@ -862,6 +957,7 @@ def _build_workbook(cols, data_rows, lang, dropdown_map):
             else:
                 cell.alignment, cell.font = center, body_font
 
+
     widths = [26, 13, 12, 13, 11, 20, 18, 12, 16, 32, 32]
     for i in range(1, len(cols) + 1):
         ws.column_dimensions[get_column_letter(i)].width = widths[i - 1] if i - 1 < len(widths) else 16
@@ -870,6 +966,7 @@ def _build_workbook(cols, data_rows, lang, dropdown_map):
             ws.cell(row=r, column=col).number_format = '#,##0'
     ws.freeze_panes = "A2"
 
+
     # Menu a tendina
     last = len(data_rows) + 1
     for col_idx, values in dropdown_map.items():
@@ -877,6 +974,7 @@ def _build_workbook(cols, data_rows, lang, dropdown_map):
         ws.add_data_validation(dv)
         letter = get_column_letter(col_idx)
         dv.add(f"{letter}2:{letter}{last}")
+
 
     # Foglio Legenda
     leg = LEGEND[lang]
@@ -900,9 +998,12 @@ def _build_workbook(cols, data_rows, lang, dropdown_map):
         if ws2.cell(row=r, column=2).font.color is None or ws2.cell(row=r, column=2).font.b is not True:
             ws2.cell(row=r, column=2).font = Font(name="Arial", size=10)
 
+
     output = BytesIO()
     wb.save(output)
     return output.getvalue()
+
+
 
 
 def generate_template_fase1(lang):
@@ -923,6 +1024,8 @@ def generate_template_fase1(lang):
     return _build_workbook(cols, data_rows, lang, dd)
 
 
+
+
 def generate_template_fase2(lang):
     cols = T[lang]["cols_fase2"]
     # 3 esempi idonei coerenti con la Fase 1
@@ -938,11 +1041,13 @@ def generate_template_fase2(lang):
         df_temp.to_excel(writer, index=False)
     return output.getvalue()
 
+
 # ==========================================
 # 8. FASE 1: SCREENING + ANALISI
 # ==========================================
 st.header(_t["header_fase1"])
 uploaded_file_1 = st.file_uploader("Upload Fase 1", type=["xlsx", "csv"], key="fase1")
+
 
 if uploaded_file_1:
     try:
@@ -953,6 +1058,7 @@ if uploaded_file_1:
         else:
             proc_cols = [c for c in df1.columns if any(k in c.lower() for k in ['process', 'proces', 'not', 'opomb'])]
             name_col = next((c for c in df1.columns if any(k in c.lower() for k in ['azienda', 'company', 'podjet'])), df1.columns[0])
+
 
             results, codici_fuori_db = [], []
             descrizioni, scores, esiti_out = [], [], []
@@ -972,9 +1078,11 @@ if uploaded_file_1:
                     "base": base, "total": total, "mult": mult, "bonuses": bonuses,
                 })
 
+
             df1[_t["col_desc"]] = descrizioni
             df1[_t["col_score"]] = scores
             df1[_t["col_verdict"]] = esiti_out
+
 
             # Ordinamento per livello (tier) e poi punteggio
             tier_rank = {"absolute": 0, "necessary": 1, "optional": 2, "alert": 3, "waste": 4}
@@ -984,13 +1092,16 @@ if uploaded_file_1:
                 r["name"].strip().lower(): r["family"] for r in results
             }
 
+
             st.success("✅ File Fase 1 analizzato!")
             c1, c2 = st.columns(2)
             c1.metric(_t["metric_total"], len(df1))
             c2.metric(_t["metric_eligible"], int((df1[_t["col_score"]] > 0).sum()))
 
+
             if codici_fuori_db:
                 st.warning(_t["alert_codes"] + ", ".join(sorted(set(codici_fuori_db))))
+
 
             # --- VESTE GRAFICA: strip riassuntiva + schede ---
             st.markdown(CARD_CSS, unsafe_allow_html=True)
@@ -999,23 +1110,29 @@ if uploaded_file_1:
             cards_html = "".join(render_company_card(it, LANG) for it in results)
             st.markdown(f'<div class="h2-wrap">{cards_html}</div>', unsafe_allow_html=True)
 
+
             # --- Tabella completa (a scomparsa) ---
             with st.expander(CARD_TXT[LANG]["table"]):
                 st.dataframe(df1.sort_values(_t["col_score"], ascending=False), use_container_width=True)
     except Exception as e:
         st.error(f"Errore: {e}")
 
+
 st.info(_t["info_template1"])
 st.download_button(_t["btn_template1"], generate_template_fase1(LANG), "template_screening.xlsx")
 
+
 st.markdown("---")
+
 
 # ==========================================
 # 9. FASE 2: FABBISOGNI + DOWNLOAD TEMPLATE 2
 # ==========================================
 
+
 st.header(_t["header_fase2"])
 uploaded_file_2 = st.file_uploader("Upload Fase 2", type=["xlsx", "csv"], key="fase2")
+
 
 n_aziende = 0
 totale_h2 = 0.0
@@ -1024,6 +1141,7 @@ ateco_aziende = ""
 fabbisogni_aziende = ""
 famiglie_aziende = ""
 
+
 if uploaded_file_2:
     try:
         df2 = pd.read_excel(uploaded_file_2) if uploaded_file_2.name.endswith('.xlsx') else pd.read_csv(uploaded_file_2)
@@ -1031,9 +1149,11 @@ if uploaded_file_2:
         st.success("✅ Dati Fabbisogni caricati!")
         st.dataframe(df2, use_container_width=True)
 
+
         col_target = next((c for c in df2.columns if 'fabbisogno' in c or 'need' in c or 'potreb' in c), None)
         col_nome = next((c for c in df2.columns if 'azienda' in c or 'company' in c or 'podjet' in c), None)
         col_code = find_code_column(df2.columns)
+
 
         if col_target:
             valori = pd.to_numeric(df2[col_target], errors='coerce').fillna(0)
@@ -1041,8 +1161,10 @@ if uploaded_file_2:
             idonee = df2[valori > 0].copy()
             idonee["_fabbisogno"] = valori[valori > 0].values
 
+
             totale_h2 = float(valori.sum())
             n_aziende = int(len(idonee))
+
 
             if col_nome:
                 nomi = idonee[col_nome].astype(str).str.strip().tolist()
@@ -1050,10 +1172,13 @@ if uploaded_file_2:
             else:
                 nomi = []
 
+
             if col_code:
                 ateco_aziende = "; ".join(idonee[col_code].astype(str).str.strip())
 
+
             fabbisogni_aziende = "; ".join(f"{v:.1f}" for v in idonee["_fabbisogno"])
+
 
             # famiglia termodinamica: dalla Fase 1 se disponibile, altrimenti dal codice
             mappa = st.session_state.get("famiglie_fase1", {})
@@ -1067,6 +1192,7 @@ if uploaded_file_2:
                 famiglie.append(fam or "none")
             famiglie_aziende = "; ".join(famiglie)
 
+
             st.metric("H2 ton/anno", f"{totale_h2:,.1f}")
             if not mappa:
                 st.info("ℹ️ Carica prima il file di Fase 1: la classificazione dei processi "
@@ -1075,17 +1201,22 @@ if uploaded_file_2:
     except Exception as e:
         st.error(f"Errore: {e}")
 
+
     st.info(_t["info_template2"])
     st.download_button(_t["btn_template2"], generate_template_fase2(LANG), "template_fabbisogni.xlsx")
+
+
 
 
 # ==========================================
 # 10. ESPORTAZIONE (Codice Identificativo)
 # ==========================================
 
+
 id_identificativo = H.testo(comune, H.COL_ID)
 st.caption(f"I dati verranno associati a {H.testo(comune, H.COL_NOME)} "
            f"(ID {id_identificativo}).")
+
 
 if st.button(_t["btn_export"]):
     payload = {
@@ -1115,6 +1246,7 @@ if st.button(_t["btn_export"]):
         salvato = True
     except Exception as e:
         st.error(f"Errore di connessione: {e}")
+
 
     if salvato:
         H.dopo_salvataggio(comune, lingua=LANG)
