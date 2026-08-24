@@ -51,6 +51,28 @@ else:
     st.info(f"💡 Suggerimento: carica il file '{NOME_FILE_MD}' nella stessa cartella "
             f"per vedere qui le istruzioni.")
 
+LINKTREE_URL = "https://h2-master-lknejybcxqbj7anywxjr8c.streamlit.app/"
+_LBL_HOME = {"it": "⬅️ Torna al menu H2READY",
+             "en": "⬅️ Back to the H2READY menu",
+             "sl": "⬅️ Nazaj na meni H2READY"}
+ 
+ 
+def barra_ritorno(lang_code="it"):
+    """Rientro al linktree: pulsante in sidebar e link in alto a destra."""
+    _lbl = _LBL_HOME.get(lang_code, _LBL_HOME["it"])
+    try:
+        st.sidebar.link_button(_lbl, LINKTREE_URL, use_container_width=True)
+    except AttributeError:          # Streamlit < 1.28: resta il solo link HTML
+        pass
+    st.markdown(
+        f"<div style='text-align:right; margin-top:-0.5rem; margin-bottom:0.5rem;'>"
+        f"<a href='{LINKTREE_URL}' target='_self' "
+        f"style='text-decoration:none; font-size:0.85rem; color:gray;'>{_lbl}</a>"
+        f"</div>", unsafe_allow_html=True)
+ 
+ 
+barra_ritorno(LANG_OPTIONS[lang_readme])
+
 # ==========================================================================
 # 1. DATI INCORPORATI
 #    cons_kwh = energia al veicolo [kWh/km]  ·  autonomia di catalogo [km]
