@@ -1201,9 +1201,8 @@ if uploaded_file_2:
     except Exception as e:
         st.error(f"Errore: {e}")
 
-
-    st.info(_t["info_template2"])
-    st.download_button(_t["btn_template2"], generate_template_fase2(LANG), "template_fabbisogni.xlsx")
+st.info(_t["info_template2"])
+st.download_button(_t["btn_template2"], generate_template_fase2(LANG), "template_fabbisogni.xlsx")
 
 
 
