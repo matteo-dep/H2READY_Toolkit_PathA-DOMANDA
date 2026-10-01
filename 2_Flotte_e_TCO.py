@@ -51,7 +51,11 @@ else:
     st.info(f"💡 Suggerimento: carica il file '{NOME_FILE_MD}' nella stessa cartella "
             f"per vedere qui le istruzioni.")
 
-LINKTREE_URL = "https://h2-master-lknejybcxqbj7anywxjr8c.streamlit.app/"
+import h2ready as H
+
+LANG = LANG_OPTIONS[lang_readme]
+
+LINKTREE_URL = H.URL_MENU      # unico punto di verita': sta in h2ready.py
 _LBL_HOME = {"it": "⬅️ Torna al menu H2READY",
              "en": "⬅️ Back to the H2READY menu",
              "sl": "⬅️ Nazaj na meni H2READY"}
@@ -71,7 +75,15 @@ def barra_ritorno(lang_code="it"):
         f"</div>", unsafe_allow_html=True)
  
  
-barra_ritorno(LANG_OPTIONS[lang_readme])
+barra_ritorno(LANG)
+
+# Il Comune si identifica una volta sola, qui: il codice non va piu' digitato
+# in fondo alla pagina e i valori gia' raccolti sono disponibili ai calcoli.
+comune = H.blocco_accesso("Tool 2.2 - Simulatore Strategico di Flotta",
+                          percorso="A", lingua=LANG)
+if comune is None:
+    st.stop()
+H.intestazione_comune(comune)
 
 # ==========================================================================
 # 1. DATI INCORPORATI
@@ -560,33 +572,47 @@ else:
 em_fossile = rif_foss["E_Produzione"] + rif_foss["E_Carburante"]
 em_h2 = row_h2["E_Produzione"] + row_h2["E_Carburante"]
 
-codice = st.text_input("Codice identificativo del Comune (es. 030043):", key="id_flotta")
+codice = H.testo(comune, H.COL_ID)
+st.caption(f"I dati verranno associati a {H.testo(comune, H.COL_NOME)} (ID {codice}).")
 
 if st.button("💾 Esporta nel database centrale", type="primary"):
-    if not codice:
-        st.error("Inserisci il codice identificativo prima di procedere.")
-    else:
-        payload = {
-            "ID_ISTAT": codice,
-            "T22_N_VEICOLI_ANALIZZATI": n_veicoli,
-            "T22_ESITO_PREVALENTE": esito,
-            "T22_BEV_FATTIBILE": "SI" if bev_fattibile else "NO",
-            "T22_FABBISOGNO_H2_TON_ANNO": round(cons_h2_kg / 1000, 2),
-            "T22_FABBISOGNO_ELETTRICO_MWH_ANNO": round(cons_bev_kwh / 1000, 1),
-            "T22_ENERGIA_ELETTROLISI_MWH_ANNO": round(energia_elettrolizzatore / 1000, 1),
-            "T22_DELTA_TCO_EURO": round(gap_h2 * n_veicoli, 0),
-            "T22_EMISSIONI_EVITATE_TCO2": round((em_fossile - em_h2) * n_veicoli, 1),
-        }
-        try:
-            resp = requests.post(WEBHOOK_URL, data=json.dumps(payload),
-                                 headers={"Content-Type": "application/json"}, timeout=20)
-            if resp.status_code in (200, 201):
-                st.success("✅ Dati trasmessi correttamente al database centrale.")
-                st.caption(f"Risposta del server: {resp.text}")
-                st.balloons()
-            else:
-                st.error(f"Errore di sincronizzazione (codice {resp.status_code})")
-        except Exception as e:
-            st.error(f"Errore di connessione: {e}")
+    payload = {
+        "ID_ISTAT": codice,
+        "T22_N_VEICOLI_ANALIZZATI": n_veicoli,
+        "T22_ESITO_PREVALENTE": esito,
+        "T22_BEV_FATTIBILE": "SI" if bev_fattibile else "NO",
+        "T22_FABBISOGNO_H2_TON_ANNO": round(cons_h2_kg / 1000, 2),
+        "T22_FABBISOGNO_ELETTRICO_MWH_ANNO": round(cons_bev_kwh / 1000, 1),
+        "T22_ENERGIA_ELETTROLISI_MWH_ANNO": round(energia_elettrolizzatore / 1000, 1),
+        "T22_DELTA_TCO_EURO": round(gap_h2 * n_veicoli, 0),
+        "T22_EMISSIONI_EVITATE_TCO2": round((em_fossile - em_h2) * n_veicoli, 1),
+    }
+    salvato = False
+    try:
+        resp = requests.post(WEBHOOK_URL, data=json.dumps(payload),
+                             headers={"Content-Type": "application/json"}, timeout=60)
+        if resp.status_code in (200, 201):
+            st.success("✅ Dati trasmessi correttamente al database centrale.")
+            st.caption(f"Risposta del server: {resp.text}")
+            st.balloons()
+            salvato = True
+        else:
+            st.error(f"Errore di sincronizzazione (codice {resp.status_code})")
+    except requests.exceptions.ReadTimeout:
+        # il timeout quasi sempre arriva a scrittura gia' avvenuta
+        st.warning("⏳ Il server non ha risposto in tempo. Quasi sempre significa che i "
+                   "dati sono stati scritti: controlla il foglio prima di ripetere l'invio.")
+        salvato = True
+    except Exception as e:
+        st.error(f"Errore di connessione: {e}")
+
+    if salvato:
+        H.dopo_salvataggio(comune, lingua=LANG)
+
+
+# Tendina "Prosegui cosi" + rientro al menu H2READY, in fondo alla pagina.
+# Dopo un salvataggio riuscito e' gia' stata mostrata da dopo_salvataggio()
+# e questa chiamata non fa nulla.
+H.prosegui(comune, lingua=LANG)
 
 

@@ -45,7 +45,7 @@ import h2ready as H
 #        Presente solo nei tool 2.1, 2.2 e 2.4: il collegamento vive nei
 #        singoli file e non in h2ready.py, cosi' non compare negli altri.
 # ==========================================================================
-LINKTREE_URL = "https://h2-master-lknejybcxqbj7anywxjr8c.streamlit.app/"
+LINKTREE_URL = H.URL_MENU      # unico punto di verita': sta in h2ready.py
 _LBL_HOME = {"it": "⬅️ Torna al menu H2READY",
              "en": "⬅️ Back to the H2READY menu",
              "sl": "⬅️ Nazaj na meni H2READY"}
@@ -773,36 +773,6 @@ sol_economica = f'{df.loc[idx_cheap, "Nome"]} · {df.loc[idx_cheap, "Vettore"]}'
 sol_pulita = f'{df.loc[idx_clean, "Nome"]} · {df.loc[idx_clean, "Vettore"]}'
 
 
-codice = st.text_input(_t["e_id"], key="id_calore")
-
-
-# if st.button(_t["e_btn"], type="primary"):
-#     if not codice:
-#         st.error(_t["e_noid"])
-#     else:
-#         payload = {
-#             "ID_ISTAT": codice,
-#             "T24_FABBISOGNO_TERMICO_KWH_ANNO": int(user_fabbisogno),
-#             "T24_SOLUZIONE_OTTIMALE": sol_economica,
-#             "T24_SOLUZIONE_PIU_PULITA": sol_pulita,
-#             "T24_EMISSIONI_EVITATE_KGCO2_ANNO": round(r_gas["Emiss"] - df.loc[idx_clean, "Emiss"], 0),
-#         }
-#         try:
-#             resp = requests.post(WEBHOOK_URL, data=json.dumps(payload),
-#                                  headers={"Content-Type": "application/json"}, timeout=60)
-#             if resp.status_code in (200, 201):
-#                 st.success(_t["e_ok"])
-#                 st.caption(resp.text)
-#                 st.balloons()
-#                 H.dopo_salvataggio(comune, lingua=LANG)      # <-- aggiungere
-#             else:
-#                 st.error(_t["e_err"].format(c=resp.status_code))
-#         except requests.exceptions.ReadTimeout:
-#             st.warning(_t["e_timeout"])
-#         except Exception as e:
-#             st.error(_t["e_conn"].format(e=e))
-
-
 codice = H.testo(comune, H.COL_ID)
 st.caption(f"I dati verranno associati a {H.testo(comune, H.COL_NOME)} (ID {codice}).")
 
@@ -816,17 +786,28 @@ if st.button(_t["e_btn"], type="primary"):
         "T24_EMISSIONI_EVITATE_KGCO2_ANNO": round(r_gas["Emiss"] - df.loc[idx_clean, "Emiss"], 0),
     }
     salvato = False
-  
+
     try:
         resp = requests.post(WEBHOOK_URL, data=json.dumps(payload),
-                                 headers={"Content-Type": "application/json"}, timeout=60)
+                             headers={"Content-Type": "application/json"}, timeout=60)
         if resp.status_code in (200, 201):
-                st.success(_t["e_ok"])
-                st.caption(resp.text)
-                st.balloons()
+            st.success(_t["e_ok"])
+            st.caption(resp.text)
+            st.balloons()
+            salvato = True
         else:
-                st.error(_t["e_err"].format(c=resp.status_code))
+            st.error(_t["e_err"].format(c=resp.status_code))
     except requests.exceptions.ReadTimeout:
-            st.warning(_t["e_timeout"])
+        # il timeout quasi sempre arriva a scrittura gia' avvenuta
+        st.warning(_t["e_timeout"])
+        salvato = True
     except Exception as e:
-            st.error(_t["e_conn"].format(e=e))
+        st.error(_t["e_conn"].format(e=e))
+
+    if salvato:
+        H.dopo_salvataggio(comune, lingua=LANG)
+
+
+# Tendina "Prosegui così" + rientro al menu. Dopo un salvataggio riuscito e'
+# gia' stata mostrata da dopo_salvataggio() e questa chiamata non fa nulla.
+H.prosegui(comune, lingua=LANG)
