@@ -29,7 +29,7 @@ import h2ready as H
 #        Presente solo nei tool 2.1, 2.2 e 2.4: il collegamento vive nei
 #        singoli file e non in h2ready.py, cosi' non compare negli altri.
 # ==========================================
-LINKTREE_URL = "https://h2-master-lknejybcxqbj7anywxjr8c.streamlit.app/"
+LINKTREE_URL = "https://h2readytoolkitpathb-c-pljosccpj7fltaxwwi6dd5.streamlit.app/"
 _LBL_HOME = {"it": "⬅️ Torna al menu H2READY",
              "en": "⬅️ Back to the H2READY menu",
              "sl": "⬅️ Nazaj na meni H2READY"}
