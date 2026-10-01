@@ -256,38 +256,9 @@ Inserisci le stime dei fabbisogni (tonnellate/anno) delle aziende risultate idon
 **🔵 FASE 3: Esportazione**
 Inserisci il tuo **Codice Identificativo** (lo stesso utilizzato nei questionari 1.1 e 1.2) in fondo alla pagina e clicca "Salva" per inviare i dati al database centrale.
         """,
-        "steps_fase1": """**Come si compila**
-
-1. Scarica il template qui sotto e aprilo in Excel o LibreOffice.
-2. Compila una riga per ogni azienda del territorio, poi ricarica il file qui sopra.
-
-**Campi obbligatori: solo due** — *nome azienda* e *codice ATECO*. Tutti gli altri (dimensione, fatturato, dipendenti, consumi, processo…) sono facoltativi: se li compili il punteggio diventa più accurato, se li lasci vuoti l'analisi funziona lo stesso. In questa fase la dimensione aziendale **non è obbligatoria**.""",
-        "steps_fase2": """**Come si compila**
-
-1. Scarica il template qui sotto: contiene già le aziende risultate idonee nella Fase 1.
-2. Per ciascuna inserisci il fabbisogno stimato di idrogeno in tonnellate/anno, poi ricarica il file qui sopra.
-
-**Qui servono tutti e tre i campi identificativi** — *nome azienda*, *dimensione azienda* e *codice ATECO* — oltre al fabbisogno. Ogni tonnellata va attribuita a un'azienda precisa: senza i tre campi la riga non si riaggancia alla Fase 1 e la classificazione del processo va persa.""",
+        "upload_label1": "Upload Fase 1: scarica il file template in formato excel e compilalo; i campi obbligatori sono il nome dell'azienda e il codice ATECO",
+        "upload_label2": "Upload Fase 2: scarica il file template in formato excel e compilalo; i campi obbligatori sono il nome dell'azienda, la dimensione aziendale e il codice ATECO, oltre al fabbisogno in t/anno",
         "info_template1": "💡 Se non hai ancora i dati di screening, usa questo modello. **Attenzione: i dati vanno caricati mantenendo esattamente questo formato (stessi nomi delle colonne e struttura).**",
-              "steps_fase1": """**Come si compila**
-        1. Scarica il template qui sotto e aprilo in Excel o LibreOffice.
-        2. Compila una riga per ogni azienda del territorio.
-        3. Ricaricalo qui sopra.
-        
-        **Campi obbligatori: solo due** — *nome azienda* e *codice ATECO*. Tutti gli
-        altri (dimensione, fatturato, dipendenti, consumi, processo…) sono facoltativi:
-        se li compili il punteggio diventa più accurato, se li lasci vuoti l'analisi
-        funziona lo stesso. La dimensione aziendale **non è obbligatoria** in questa
-        fase.""",
-                "steps_fase2": """**Come si compila**
-        1. Scarica il template qui sotto: contiene già le aziende risultate idonee.
-        2. Per ciascuna, inserisci il fabbisogno stimato di idrogeno in tonnellate/anno.
-        3. Ricaricalo qui sopra.
-        
-        **Qui servono tutti e tre i campi identificativi** — *nome azienda*,
-        *dimensione azienda* e *codice ATECO* — oltre al fabbisogno. Servono perché
-        ogni tonnellata va attribuita a un'azienda precisa: senza i tre campi la riga
-        non si riaggancia alla Fase 1 e la classificazione del processo va persa.""",
         "info_template2": "💡 Usa questo modello per consolidare le tonnellate di idrogeno necessarie. **Attenzione: i dati vanno caricati rispettando rigorosamente il formato di questo template.**",
         "btn_template1": "📥 Scarica Template Screening (Fase 1)",
         "btn_template2": "📥 Scarica Template Fabbisogni (Fase 2)",
@@ -337,37 +308,9 @@ Enter the estimated needs (tons/year) for the eligible companies. The template i
 **🔵 PHASE 3: Export**
 Enter your **Identification Code** at the bottom of the page and click "Save".
         """,
-        "steps_fase1": """**How to fill it in**
-
-1. Download the template below and open it in Excel or LibreOffice.
-2. Fill in one row per company in your area, then upload the file above.
-
-**Only two fields are required** — *company name* and *NACE code*. Everything else (size, turnover, employees, consumption, process…) is optional: filling it in makes the score more accurate, leaving it empty still works. Company size is **not required** at this stage.""",
-        "steps_fase2": """**How to fill it in**
-
-1. Download the template below: it already lists the companies found eligible in Phase 1.
-2. For each one enter the estimated hydrogen need in tonnes per year, then upload the file above.
-
-**Here all three identifying fields are required** — *company name*, *company size* and *NACE code* — in addition to the need. Every tonne must be attributed to a specific company: without the three fields the row cannot be matched back to Phase 1 and the process classification is lost.""",
+        "upload_label1": "Upload Phase 1: download the Excel template below and fill it in; the required fields are the company name and the NACE code",
+        "upload_label2": "Upload Phase 2: download the Excel template below and fill it in; the required fields are the company name, the company size and the NACE code, plus the need in t/year",
         "info_template1": "💡 If you don't have the screening data yet, use this template. **Warning: data must be uploaded keeping exactly this format (same column names and structure).**",
-                      "steps_fase1": """**How to fill it in**
-        1. Download the template below and open it in Excel or LibreOffice.
-        2. Fill in one row per company in your area.
-        3. Upload it above.
-        
-        **Only two fields are required** — *company name* and *NACE code*. Everything
-        else (size, turnover, employees, consumption, process…) is optional: filling it
-        in makes the score more accurate, leaving it empty still works. Company size is
-        **not required** at this stage.""",
-                "steps_fase2": """**How to fill it in**
-        1. Download the template below: it already lists the eligible companies.
-        2. For each one, enter the estimated hydrogen need in tonnes per year.
-        3. Upload it above.
-        
-        **Here all three identifying fields are required** — *company name*,
-        *company size* and *NACE code* — in addition to the need. They are needed
-        because every tonne must be attributed to a specific company: without them the
-        row cannot be matched back to Phase 1 and the process classification is lost.""",
         "info_template2": "💡 Use this template to consolidate hydrogen tons. **Warning: data must be uploaded strictly following the format of this template.**",
         "btn_template1": "📥 Download Screening Template (Phase 1)",
         "btn_template2": "📥 Download Needs Template (Phase 2)",
@@ -416,37 +359,9 @@ Vnesite ocenjene potrebe (tone/leto) za ustrezna podjetja. Predloga je na voljo 
 **🔵 3. FAZA: Izvoz**
 Na dnu strani vnesite svojo **Identifikacijsko kodo** in kliknite "Shrani".
         """,
-        "steps_fase1": """**Kako izpolniti**
-
-1. Prenesite predlogo spodaj in jo odprite v Excelu ali LibreOffice.
-2. Izpolnite eno vrstico za vsako podjetje na vašem območju, nato datoteko naložite zgoraj.
-
-**Obvezni sta samo dve polji** — *ime podjetja* in *koda SKD*. Vsa ostala (velikost, promet, zaposleni, poraba, proces …) so neobvezna: če jih izpolnite, bo ocena natančnejša, če jih pustite prazna, analiza vseeno deluje. Velikost podjetja v tej fazi **ni obvezna**.""",
-        "steps_fase2": """**Kako izpolniti**
-
-1. Prenesite predlogo spodaj: že vsebuje podjetja, ki so bila v 1. fazi ocenjena kot ustrezna.
-2. Za vsako vnesite ocenjeno potrebo po vodiku v tonah na leto, nato datoteko naložite zgoraj.
-
-**Tu so potrebna vsa tri identifikacijska polja** — *ime podjetja*, *velikost podjetja* in *koda SKD* — poleg potrebe. Vsako tono je treba pripisati določenemu podjetju: brez teh treh polj vrstice ni mogoče povezati nazaj s 1. fazo in razvrstitev procesa se izgubi.""",
+        "upload_label1": "Nalaganje 1. faze: prenesite predlogo v Excelu in jo izpolnite; obvezni polji sta ime podjetja in koda SKD",
+        "upload_label2": "Nalaganje 2. faze: prenesite predlogo v Excelu in jo izpolnite; obvezna polja so ime podjetja, velikost podjetja in koda SKD ter potreba v t/leto",
         "info_template1": "💡 Če še nimate podatkov za pregled, uporabite to predlogo. **Opozorilo: podatke je treba naložiti v natančno tem formatu (enaka imena stolpcev in struktura).**",
-              "steps_fase1": """**Kako izpolniti**
-        1. Prenesite predlogo spodaj in jo odprite v Excelu ali LibreOffice.
-        2. Izpolnite eno vrstico za vsako podjetje na vašem območju.
-        3. Naložite jo zgoraj.
-        
-        **Obvezni sta samo dve polji** — *ime podjetja* in *koda SKD*. Vsa ostala
-        (velikost, promet, zaposleni, poraba, proces …) so neobvezna: če jih izpolnite,
-        bo ocena natančnejša, če jih pustite prazna, analiza vseeno deluje. Velikost
-        podjetja v tej fazi **ni obvezna**.""",
-                "steps_fase2": """**Kako izpolniti**
-        1. Prenesite predlogo spodaj: že vsebuje ustrezna podjetja.
-        2. Za vsako vnesite ocenjeno potrebo po vodiku v tonah na leto.
-        3. Naložite jo zgoraj.
-        
-        **Tu so potrebna vsa tri identifikacijska polja** — *ime podjetja*,
-        *velikost podjetja* in *koda SKD* — poleg potrebe. Potrebna so, ker je treba
-        vsako tono pripisati določenemu podjetju: brez njih vrstice ni mogoče povezati
-        nazaj s 1. fazo in razvrstitev procesa se izgubi.""",
         "info_template2": "💡 Uporabite to predlogo za konsolidacijo ton vodika. **Opozorilo: podatke naložite strogo v skladu s formatom te predloge.**",
         "btn_template1": "📥 Prenesi predlogo za pregled (1. faza)",
         "btn_template2": "📥 Prenesi predlogo za potrebe (2. faza)",
@@ -1137,7 +1052,7 @@ def generate_template_fase2(lang):
 # 8. FASE 1: SCREENING + ANALISI
 # ==========================================
 st.header(_t["header_fase1"])
-uploaded_file_1 = st.file_uploader("Upload Fase 1", type=["xlsx", "csv"], key="fase1")
+uploaded_file_1 = st.file_uploader(_t["upload_label1"], type=["xlsx", "csv"], key="fase1")
 
 
 if uploaded_file_1:
@@ -1209,7 +1124,6 @@ if uploaded_file_1:
         st.error(f"Errore: {e}")
 
 
-st.markdown(_t["steps_fase1"])
 st.info(_t["info_template1"])
 st.download_button(_t["btn_template1"], generate_template_fase1(LANG), "template_screening.xlsx")
 
@@ -1223,7 +1137,7 @@ st.markdown("---")
 
 
 st.header(_t["header_fase2"])
-uploaded_file_2 = st.file_uploader("Upload Fase 2", type=["xlsx", "csv"], key="fase2")
+uploaded_file_2 = st.file_uploader(_t["upload_label2"], type=["xlsx", "csv"], key="fase2")
 
 
 n_aziende = 0
@@ -1293,7 +1207,6 @@ if uploaded_file_2:
     except Exception as e:
         st.error(f"Errore: {e}")
 
-st.markdown(_t["steps_fase2"])
 st.info(_t["info_template2"])
 st.download_button(_t["btn_template2"], generate_template_fase2(LANG), "template_fabbisogni.xlsx")
 
