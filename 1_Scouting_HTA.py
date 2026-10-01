@@ -1101,7 +1101,7 @@ def generate_template_fase2(lang):
 # 8. FASE 1: SCREENING + ANALISI
 # ==========================================
 st.header(_t["header_fase1"])
-uploaded_file_1 = st.file_uploader("Upload Fase 1: scarica il file template in formato excel e compilalo: i campi obbligatori sono il nome dell'azienda e il codice ATECO", type=["xlsx", "csv"], key="fase1")
+uploaded_file_1 = st.file_uploader("Upload Fase 1: scarica il file template in formato excel e compilalo; i campi obbligatori sono il nome dell'azienda e il codice ATECO", type=["xlsx", "csv"], key="fase1")
 
 
 if uploaded_file_1:
