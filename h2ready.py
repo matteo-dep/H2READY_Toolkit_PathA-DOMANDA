@@ -80,6 +80,11 @@ CONTATTO_PROGETTO = "matteo.depiccoli@ape.fvg.it"
 # tool, così un cambio di deploy si propaga con una sola modifica copiata.
 URL_MENU = "https://h2readytoolkitpathb-c-pljosccpj7fltaxwwi6dd5.streamlit.app/"
 
+# Generatore di Action Plan: e' l'ultimo passo del percorso, non uno strumento
+# in piu'. Per questo non sta nel foglio LINK insieme agli altri ma ha un
+# blocco suo, mostrato in fondo a ogni tool e nella pagina 1.3.
+URL_ACTION_PLAN = "https://action-plan-tool-ot48zaauowyurony4i9k6o.streamlit.app/"
+
 # Ponte temporaneo: URL che hanno cambiato deploy dopo l'ultima revisione del
 # foglio LINK. Quello che sta qui ha la precedenza su quello che sta nel foglio.
 # Appena il foglio è aggiornato, la voce va tolta: due fonti di verità per lo
@@ -285,6 +290,32 @@ TESTI = {
     "menu_torna": {"it": "↩ Torna al menu H2READY",
                    "en": "↩ Back to the H2READY menu",
                    "sl": "↩ Nazaj v meni H2READY"},
+
+    # --- Action Plan ---
+    "ap_titolo": {"it": "Il tuo Action Plan",
+                  "en": "Your Action Plan",
+                  "sl": "Vaš akcijski načrt"},
+    "ap_bottone": {"it": "📄 Genera l'Action Plan del Comune",
+                   "en": "📄 Generate the municipal Action Plan",
+                   "sl": "📄 Ustvarite občinski akcijski načrt"},
+    "ap_pronto": {"it": "Hai completato tutto quello che il tuo profilo prevede: "
+                        "il documento può essere generato.",
+                  "en": "You have completed everything your profile calls for: "
+                        "the document can now be generated.",
+                  "sl": "Izpolnili ste vse, kar predvideva vaš profil: dokument je "
+                        "mogoče ustvariti."},
+    "ap_parziale": {"it": "Puoi generarlo anche adesso, ma conterrà soltanto gli "
+                          "strumenti già compilati. Gli altri restano fuori.",
+                    "en": "You can generate it now as well, but it will contain only "
+                          "the tools already completed. The rest stays out.",
+                    "sl": "Ustvarite ga lahko tudi zdaj, vendar bo vseboval le že "
+                          "izpolnjena orodja. Ostala ostanejo zunaj."},
+    "ap_l0": {"it": "Il Comune è in Livello 0: l'Action Plan non è generabile finché "
+                    "non viene completato il questionario 1.1.",
+              "en": "The municipality is at Level 0: the Action Plan cannot be "
+                    "generated until questionnaire 1.1 is completed.",
+              "sl": "Občina je na ravni 0: akcijskega načrta ni mogoče ustvariti, "
+                    "dokler ni izpolnjen vprašalnik 1.1."},
 }
 
 
@@ -813,6 +844,35 @@ def torna_al_menu(riga=None, lingua=None):
                    use_container_width=True)
 
 
+def action_plan(riga, lingua=None, titolo=True):
+    """Accesso al generatore di Action Plan.
+
+    Compare in fondo a ogni tool e nella pagina 1.3. Il messaggio cambia a
+    seconda che manchino ancora strumenti: il documento si puo' generare in
+    qualunque momento, ma conta solo cio' che ha ricevuto, e conviene dirlo
+    prima che il Comune si ritrovi un piano a meta'.
+    """
+    if lingua:
+        imposta_lingua(lingua)
+
+    if titolo:
+        st.subheader(TT("ap_titolo"))
+
+    if riga is None or (hasattr(riga, "empty") and riga.empty) or livello(riga) == "L0":
+        st.info(TT("ap_l0"))
+        return
+
+    fatti = tool_completati(riga)
+    if all(fatti.values()):
+        st.success(TT("ap_pronto"))
+    else:
+        st.caption(TT("ap_parziale"))
+
+    st.link_button(TT("ap_bottone"),
+                   url_con_contesto(URL_ACTION_PLAN, testo(riga, COL_ID), lingua_corrente()),
+                   type="primary", use_container_width=True)
+
+
 def prosegui(riga, lingua=None, aperto=True, menu=True, foglio="LINK"):
     """Tendina con i soli strumenti ancora da compilare.
 
@@ -855,6 +915,8 @@ def prosegui(riga, lingua=None, aperto=True, menu=True, foglio="LINK"):
             fatti_ora = [c for c, ok in fatti.items() if ok]
             if fatti_ora:
                 st.caption(TT("pros_fatti") + ": " + " · ".join(sorted(fatti_ora)))
+
+    action_plan(riga, titolo=False)
 
     if menu:
         torna_al_menu(riga)
