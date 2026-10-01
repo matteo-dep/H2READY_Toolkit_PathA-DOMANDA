@@ -33,37 +33,51 @@ import json
 # vettori e fattori di emissione, coerenti tra loro e con la fisica.
 # ==========================================================================
 
-st.set_page_config(page_title="H2READY toolkit - Tool 2.2 Simulatore Flotta", page_icon="🚗", layout="wide")
-st.title("🚗 H2READY TOOLKIT - Tool 2.2: Simulatore Strategico di Flotta")
-st.markdown("Confronto **Diesel / Elettrico / Idrogeno** con curve di proiezione tecnologica "
-            "(2024-2035) per un'analisi dinamica del TCO e delle emissioni LCA.")
+st.set_page_config(page_title="H2READY toolkit - Tool 2.2", page_icon="🚗", layout="wide")
 
+# ==========================================================================
+# 0. LINGUA
+#    Il selettore governa tutta l'interfaccia, non solo il manuale: fino alla
+#    revisione precedente cambiava la sola lingua del file README e il resto
+#    della pagina restava in italiano.
+# ==========================================================================
 LANG_OPTIONS = {"Italiano": "it", "English": "en", "Slovenščina": "sl"}
-lang_readme = st.sidebar.selectbox("🌐 Lingua della documentazione", list(LANG_OPTIONS.keys()),
-                                   help="Cambia la lingua del manuale qui sotto. "
-                                        "L'interfaccia resta in italiano.")
-NOME_FILE_MD = f"REadMe_Mezzi_{LANG_OPTIONS[lang_readme]}.md"
-if os.path.exists(NOME_FILE_MD):
-    with st.expander("ℹ️ Leggi Istruzioni, Logiche e Assunzioni del Simulatore"):
-        with open(NOME_FILE_MD, "r", encoding="utf-8") as f:
-            st.markdown(f.read())
-else:
-    st.info(f"💡 Suggerimento: carica il file '{NOME_FILE_MD}' nella stessa cartella "
-            f"per vedere qui le istruzioni.")
+lang_readme = st.sidebar.selectbox("🌐 Lingua / Language / Jezik", list(LANG_OPTIONS.keys()))
+LANG = LANG_OPTIONS[lang_readme]
 
 import h2ready as H
 
-LANG = LANG_OPTIONS[lang_readme]
+from testi_2_2 import T
+_t = T[LANG]
+
+# Etichette tradotte delle chiavi dei dizionari di dati. Le chiavi restano in
+# italiano perche' sono usate dal motore di calcolo e finiscono nell'excelone:
+# si traduce solo cio' che si vede.
+def vis_tec(t):
+    return _t["tech"].get(t, t)
+
+
+def vis_cat(c):
+    return _t["catbase"].get(c, _t["tech"].get(c, c))
+
+
+st.title(_t["title"])
+st.markdown(_t["subtitle"])
+
+NOME_FILE_MD = f"REadMe_Mezzi_{LANG}.md"
+if os.path.exists(NOME_FILE_MD):
+    with st.expander(_t["readme_exp"]):
+        with open(NOME_FILE_MD, "r", encoding="utf-8") as f:
+            st.markdown(f.read())
+else:
+    st.info(_t["readme_ko"].format(f=NOME_FILE_MD))
 
 LINKTREE_URL = H.URL_MENU      # unico punto di verita': sta in h2ready.py
-_LBL_HOME = {"it": "⬅️ Torna al menu H2READY",
-             "en": "⬅️ Back to the H2READY menu",
-             "sl": "⬅️ Nazaj na meni H2READY"}
- 
- 
+
+
 def barra_ritorno(lang_code="it"):
     """Rientro al linktree: pulsante in sidebar e link in alto a destra."""
-    _lbl = _LBL_HOME.get(lang_code, _LBL_HOME["it"])
+    _lbl = _t["home"]
     try:
         st.sidebar.link_button(_lbl, LINKTREE_URL, use_container_width=True)
     except AttributeError:          # Streamlit < 1.28: resta il solo link HTML
@@ -73,14 +87,13 @@ def barra_ritorno(lang_code="it"):
         f"<a href='{LINKTREE_URL}' target='_self' "
         f"style='text-decoration:none; font-size:0.85rem; color:gray;'>{_lbl}</a>"
         f"</div>", unsafe_allow_html=True)
- 
- 
+
+
 barra_ritorno(LANG)
 
 # Il Comune si identifica una volta sola, qui: il codice non va piu' digitato
 # in fondo alla pagina e i valori gia' raccolti sono disponibili ai calcoli.
-comune = H.blocco_accesso("Tool 2.2 - Simulatore Strategico di Flotta",
-                          percorso="A", lingua=LANG)
+comune = H.blocco_accesso(_t["accesso"], percorso="A", lingua=LANG)
 if comune is None:
     st.stop()
 H.intestazione_comune(comune)
@@ -182,40 +195,36 @@ def interpolate(year, y2024, y2030):
 # 2. SIDEBAR
 # ==========================================================================
 with st.sidebar:
-    st.header("1. Parametri di Missione")
-    tipo_veicolo = st.selectbox("Tipo Veicolo", list(VEICOLI.keys()))
+    st.header(_t["sb_missione"])
+    tipo_veicolo = st.selectbox(_t["lbl_veicolo"], list(VEICOLI.keys()),
+                                format_func=lambda k: _t["veicoli"].get(k, k))
     V = VEICOLI[tipo_veicolo]
-    km_giornalieri = st.slider("Percorrenza Giornaliera (km)", 10, 1000, V["km_def"], 10)
-    giorni_operativi = st.slider("Giorni Operativi Annui", 200, 365, 300, 5)
-    tempo_inattivita = st.slider("Finestra max per Ricarica (Ore)", 0.5, 12.0, 5.0, 0.5,
-                                 help="Ore in cui il mezzo è fermo e disponibile a ricaricare. "
-                                      "È il vincolo operativo che decide se un BEV è praticabile.")
+    km_giornalieri = st.slider(_t["lbl_km"], 10, 1000, V["km_def"], 10)
+    giorni_operativi = st.slider(_t["lbl_giorni"], 200, 365, 300, 5)
+    tempo_inattivita = st.slider(_t["lbl_finestra"], 0.5, 12.0, 5.0, 0.5,
+                                 help=_t["help_finestra"])
 
-    st.header("2. Dimensionamento Flotta")
-    n_veicoli = st.slider("Numero di veicoli da sostituire", 1, 500, 10,
-                          help="Definisce la dimensione della flotta per fabbisogno "
-                               "energetico totale e investimenti macro.")
+    st.header(_t["sb_flotta"])
+    n_veicoli = st.slider(_t["lbl_n"], 1, 500, 10, help=_t["help_n"])
 
-    st.header("3. Condizioni Ambientali")
-    orografia = st.selectbox("Orografia del percorso", list(ORO.keys()))
-    inverno_rigido = st.checkbox("Clima Invernale Rigido (< 0°C)",
-                                 help="Penalizza soprattutto le batterie: consumano di più e "
-                                      "invecchiano più in fretta (lithium plating).")
+    st.header(_t["sb_ambiente"])
+    orografia = st.selectbox(_t["lbl_oro"], list(ORO.keys()),
+                             format_func=lambda k: _t["oro"].get(k, k))
+    inverno_rigido = st.checkbox(_t["lbl_inverno"], help=_t["help_inverno"])
 
-    st.header("4. Costi Energetici Iniziali (2024)")
-    p_benzina = st.number_input("Benzina (€/l)", value=1.90, format="%.2f") if tipo_veicolo == "Automobile" else 0.0
-    p_diesel = st.number_input("Diesel (€/l)", value=1.80, format="%.2f")
-    p_el_rete = st.number_input("Elettricità Rete (€/kWh)", value=0.31, format="%.3f")
-    p_el_fv = st.number_input("Elettricità FV (€/kWh)", value=0.24, format="%.3f")
-    p_h2_rete = st.number_input("H2 da Rete (€/kg)", value=20.00, format="%.2f")
-    p_h2_fv = st.number_input("H2 Autoprodotto (€/kg)", value=15.00, format="%.2f")
-    p_ricarica_pubblica = st.number_input("Ricarica pubblica rapida (€/kWh)", value=0.70, format="%.2f",
-                                          help="Usata solo per l'energia che non si riesce a "
-                                               "caricare al deposito.")
+    st.header(_t["sb_costi"])
+    p_benzina = st.number_input(_t["p_benzina"], value=1.90, format="%.2f") if tipo_veicolo == "Automobile" else 0.0
+    p_diesel = st.number_input(_t["p_diesel"], value=1.80, format="%.2f")
+    p_el_rete = st.number_input(_t["p_el_rete"], value=0.31, format="%.3f")
+    p_el_fv = st.number_input(_t["p_el_fv"], value=0.24, format="%.3f")
+    p_h2_rete = st.number_input(_t["p_h2_rete"], value=20.00, format="%.2f")
+    p_h2_fv = st.number_input(_t["p_h2_fv"], value=15.00, format="%.2f")
+    p_ricarica_pubblica = st.number_input(_t["p_pubblica"], value=0.70, format="%.2f",
+                                          help=_t["help_pubblica"])
 
-    st.header("5. Proiezioni Tecnologiche")
-    anno_acquisto = st.slider("Anno Previsto di Acquisto", 2024, 2035, 2024)
-    anni_utilizzo = st.slider("Ciclo di Vita Utile (Anni)", 5, 30, V["vita_def"])
+    st.header(_t["sb_proiezioni"])
+    anno_acquisto = st.slider(_t["lbl_anno"], 2024, 2035, 2024)
+    anni_utilizzo = st.slider(_t["lbl_vita"], 5, 30, V["vita_def"])
 
 km_annui = km_giornalieri * giorni_operativi
 total_km_life = km_annui * anni_utilizzo
@@ -332,6 +341,11 @@ for t, d in V["tec"].items():
 df_final = pd.DataFrame(res)
 
 # Efficienza Well-to-Wheel = rendimento della filiera × rendimento del powertrain
+# Etichette tradotte per i grafici: le colonne originali restano in italiano
+# perche' sono chiavi di confronto nel motore di calcolo.
+df_final["Tec_vis"] = df_final["Tecnologia"].map(vis_tec)
+df_final["Cat_vis"] = df_final["Categoria_Base"].map(vis_cat)
+
 df_final["Eta"] = df_final.apply(
     lambda r: WTT[r["Tecnologia"]] * TTW[r["Categoria"]] * 100, axis=1)
 
@@ -356,87 +370,83 @@ sem_aut = ("🟢 OK" if quota_strada == 0 else
 
 bev_fattibile = "🔴" not in sem_peso and "🔴" not in sem_tempo and "🔴" not in sem_aut
 
-st.subheader("📋 Verdetto di Fattibilità Operativa")
+st.subheader(_t["v_title"])
 if not bev_fattibile:
     motivi = []
-    if "🔴" in sem_peso: motivi.append(f"la batteria peserebbe {peso_batt:,.0f} kg")
-    if "🔴" in sem_tempo: motivi.append(f"servirebbero {tempo_ric:.1f} h di ricarica "
-                                        f"contro {tempo_inattivita} h disponibili")
-    if "🔴" in sem_aut: motivi.append(f"il {quota_strada*100:.0f}% dell'energia andrebbe "
-                                      f"comprata a colonnina pubblica")
-    st.error("### 🔵 L'IDROGENO È LA SCELTA STRATEGICA MIGLIORE")
-    st.write(f"L'elettrico non regge i vincoli fisici della missione: {'; '.join(motivi)}. "
-             f"L'idrogeno copre {df_final.loc[df_final['Tecnologia']==h2_name,'Autonomia'].values[0]:,.0f} km "
-             f"con un pieno da {(15 if 'Camion' in tipo_veicolo else 15):.0f} minuti.")
+    if "🔴" in sem_peso:
+        motivi.append(_t["v_mot_peso"].format(p=f"{peso_batt:,.0f}"))
+    if "🔴" in sem_tempo:
+        motivi.append(_t["v_mot_tempo"].format(t=f"{tempo_ric:.1f}", d=tempo_inattivita))
+    if "🔴" in sem_aut:
+        motivi.append(_t["v_mot_aut"].format(q=f"{quota_strada*100:.0f}"))
+    st.error(_t["v_h2"])
+    st.write(_t["v_h2_txt"].format(
+        m="; ".join(motivi),
+        km=f"{df_final.loc[df_final['Tecnologia']==h2_name,'Autonomia'].values[0]:,.0f}",
+        min=15))
 elif tco_bev <= tco_h2:
-    st.success("### 🟢 L'ELETTRICO (BEV) È FATTIBILE E PIÙ ECONOMICO")
-    st.write(f"La batteria copre la missione da {km_giornalieri} km e si ricarica in "
-             f"{tempo_ric:.1f} h, dentro la finestra di {tempo_inattivita} h. "
-             f"Costa € {abs(tco_h2-tco_bev):,.0f} in meno dell'idrogeno sul ciclo di vita.")
+    st.success(_t["v_bev"])
+    st.write(_t["v_bev_txt"].format(km=km_giornalieri, t=f"{tempo_ric:.1f}",
+                                    d=tempo_inattivita, e=f"{abs(tco_h2-tco_bev):,.0f}"))
 else:
-    st.info("### 🔵 ENTRAMBE FATTIBILI: L'IDROGENO È PIÙ CONVENIENTE")
-    st.write(f"L'elettrico regge i vincoli fisici, ma sul ciclo di vita l'idrogeno costa "
-             f"€ {abs(tco_bev-tco_h2):,.0f} in meno.")
+    st.info(_t["v_both"])
+    st.write(_t["v_both_txt"].format(e=f"{abs(tco_bev-tco_h2):,.0f}"))
 
 if batt_limitata:
     if quota_strada > 0:
-        st.warning(f"⚠️ La batteria necessaria alla missione ({batt_teorica:,.0f} kWh) supera il "
-                   f"limite di peso ammissibile ed è stata limitata a {batt_kwh:,.0f} kWh. "
-                   f"Con {aut_bev:,.0f} km di autonomia il mezzo **non completa i "
-                   f"{km_giornalieri} km della giornata**: il {quota_strada*100:.0f}% dell'energia "
-                   f"va comprata a ricarica pubblica, con le soste che comporta.")
+        st.warning(_t["batt_ko"].format(bt=f"{batt_teorica:,.0f}", bk=f"{batt_kwh:,.0f}",
+                                        a=f"{aut_bev:,.0f}", km=km_giornalieri,
+                                        q=f"{quota_strada*100:.0f}"))
     else:
-        st.info(f"ℹ️ La batteria è stata limitata dal vincolo di peso "
-                f"({batt_teorica:,.0f} → {batt_kwh:,.0f} kWh). L'autonomia residua "
-                f"({aut_bev:,.0f} km) copre comunque la missione, ma senza il margine "
-                f"di sicurezza del 33% previsto.")
+        st.info(_t["batt_ok"].format(bt=f"{batt_teorica:,.0f}", bk=f"{batt_kwh:,.0f}",
+                                     a=f"{aut_bev:,.0f}"))
 
-st.markdown("### 🚦 Analisi dei Limiti Fisici Elettrici (BEV)")
+st.markdown(_t["lim_title"])
 c1, c2, c3, c4 = st.columns(4)
-c1.metric("Peso Batteria Richiesta", f"{peso_batt:,.0f} kg",
+c1.metric(_t["m_peso"], f"{peso_batt:,.0f} kg",
           sem_peso.split()[1], delta_color="inverse")
-c2.metric("Tempo Ricarica Richiesto", f"{tempo_ric:.1f} h",
-          f"vs {tempo_inattivita} h disponibili",
+c2.metric(_t["m_tempo"], f"{tempo_ric:.1f} h",
+          _t["d_tempo"].format(d=tempo_inattivita),
           delta_color="inverse" if tempo_ric > tempo_inattivita else "normal")
-c3.metric("Carico Utile Perso", f"{peso_netto_perso:,.0f} kg",
-          "netto deroga UE +2 t", delta_color="inverse")
-c4.metric("Delta Costo H2 vs BEV", f"€ {tco_h2 - tco_bev:,.0f}",
+c3.metric(_t["m_carico"], f"{peso_netto_perso:,.0f} kg",
+          _t["d_deroga"], delta_color="inverse")
+c4.metric(_t["m_delta"], f"€ {tco_h2 - tco_bev:,.0f}",
           f"{(tco_h2 - tco_bev)/total_km_life:,.2f} €/km",
           delta_color="inverse" if tco_h2 > tco_bev else "normal")
 
 if n_sostituzioni > 0:
-    st.caption(f"🔋 Nel ciclo di vita ({total_km_life:,.0f} km) la batteria va sostituita "
-               f"**{n_sostituzioni} volta/e** (vita utile {vita_batt:,.0f} km"
-               f"{', ridotta dal clima rigido' if inverno_rigido else ''}): "
-               f"€ {n_sostituzioni*batt_kwh*costo_batt_kwh:,.0f} per veicolo, già inclusi nel TCO.")
+    st.caption(_t["sostituzioni"].format(
+        km=f"{total_km_life:,.0f}", n=n_sostituzioni, v=f"{vita_batt:,.0f}",
+        f=_t["sost_freddo"] if inverno_rigido else "",
+        e=f"{n_sostituzioni*batt_kwh*costo_batt_kwh:,.0f}"))
 
 # ==========================================================================
 # 5. GAP ANALYSIS
 # ==========================================================================
 st.divider()
-st.header("💰 Strategia Incentivi & Gap Analysis")
-st.write(f"Confronto rispetto al veicolo **{fossile_name}** per l'intero ciclo di vita "
-         f"({total_km_life:,.0f} km, {anni_utilizzo} anni).")
+st.header(_t["g_title"])
+st.write(_t["g_sub"].format(f=vis_tec(fossile_name), km=f"{total_km_life:,.0f}",
+                            a=anni_utilizzo))
 
 gi1, gi2 = st.columns(2)
 with gi1:
     gap_bev = tco_bev - tco_fossile
-    st.subheader(f"🔋 Elettrico ({bev_name})")
-    st.metric("Gap TCO Totale", f"€ {gap_bev:,.0f}", delta_color="inverse")
-    st.metric("Gap al Chilometro", f"€ {gap_bev/total_km_life:,.3f} /km", delta_color="inverse")
-    st.metric("Gap sull'intera flotta", f"€ {gap_bev*n_veicoli:,.0f}", delta_color="inverse")
+    st.subheader(_t["g_bev"].format(n=vis_tec(bev_name)))
+    st.metric(_t["g_tot"], f"€ {gap_bev:,.0f}", delta_color="inverse")
+    st.metric(_t["g_km"], f"€ {gap_bev/total_km_life:,.3f} /km", delta_color="inverse")
+    st.metric(_t["g_flotta"], f"€ {gap_bev*n_veicoli:,.0f}", delta_color="inverse")
 with gi2:
     gap_h2 = tco_h2 - tco_fossile
-    st.subheader(f"💧 Idrogeno ({h2_name})")
-    st.metric("Gap TCO Totale", f"€ {gap_h2:,.0f}", delta_color="inverse")
-    st.metric("Gap al Chilometro", f"€ {gap_h2/total_km_life:,.3f} /km", delta_color="inverse")
-    st.metric("Gap sull'intera flotta", f"€ {gap_h2*n_veicoli:,.0f}", delta_color="inverse")
+    st.subheader(_t["g_h2"].format(n=vis_tec(h2_name)))
+    st.metric(_t["g_tot"], f"€ {gap_h2:,.0f}", delta_color="inverse")
+    st.metric(_t["g_km"], f"€ {gap_h2/total_km_life:,.3f} /km", delta_color="inverse")
+    st.metric(_t["g_flotta"], f"€ {gap_h2*n_veicoli:,.0f}", delta_color="inverse")
 
 # ==========================================================================
 # 6. GRAFICI
 # ==========================================================================
 st.divider()
-st.header("📊 Analisi Valori Assoluti (TCO & LCA)")
+st.header(_t["c_title"])
 
 df_base = df_final[df_final["Categoria_Base"].isin(
     [fossile_name, "Elettrico (BEV)", "Idrogeno (FCEV)"])].drop_duplicates(subset=["Categoria_Base"])
@@ -444,32 +454,32 @@ rif_foss = df_final[df_final["Tecnologia"] == fossile_name].iloc[0]
 
 g1, g2 = st.columns(2)
 with g1:
-    st.subheader("A. Autonomia Massima [km]")
-    f1 = px.bar(df_base, x="Categoria_Base", y="Autonomia", color="Categoria_Base", text_auto=".0f")
+    st.subheader(_t["c_a"])
+    f1 = px.bar(df_base, x="Cat_vis", y="Autonomia", color="Cat_vis", text_auto=".0f")
     f1.add_hline(y=rif_foss["Autonomia"], line_dash="dash", line_color="black")
     f1.update_layout(showlegend=False, xaxis_title="")
     st.plotly_chart(f1, use_container_width=True)
 with g2:
-    st.subheader("B. Consumo [kWh/km]")
-    f2 = px.bar(df_base, x="Categoria_Base", y="Consumo", color="Categoria_Base", text_auto=".2f")
+    st.subheader(_t["c_b"])
+    f2 = px.bar(df_base, x="Cat_vis", y="Consumo", color="Cat_vis", text_auto=".2f")
     f2.add_hline(y=rif_foss["Consumo"], line_dash="dash", line_color="black")
     f2.update_layout(showlegend=False, xaxis_title="")
     st.plotly_chart(f2, use_container_width=True)
 
 g3, g4 = st.columns(2)
 with g3:
-    st.subheader("C. Efficienza Globale WtW [%]")
-    f3 = px.bar(df_final, x="Tecnologia", y="Eta", color="Tecnologia", text_auto=".1f")
+    st.subheader(_t["c_c"])
+    f3 = px.bar(df_final, x="Tec_vis", y="Eta", color="Tec_vis", text_auto=".1f")
     f3.add_hline(y=rif_foss["Eta"], line_dash="dash", line_color="black")
-    f3.update_layout(showlegend=False, yaxis_title="Rendimento %", xaxis_title="")
+    f3.update_layout(showlegend=False, yaxis_title=_t["c_rendimento"], xaxis_title="")
     st.plotly_chart(f3, use_container_width=True)
 with g4:
-    st.subheader("D. Emissioni LCA Totali [tCO2]")
-    dme = df_final.melt(id_vars="Tecnologia", value_vars=["E_Produzione", "E_Carburante"],
-                        var_name="Fase", value_name="tCO2")
-    dme["Fase"] = dme["Fase"].replace({"E_Produzione": "Costruzione",
-                                       "E_Carburante": "Carburante/Uso"})
-    f4 = px.bar(dme, x="Tecnologia", y="tCO2", color="Fase", barmode="stack",
+    st.subheader(_t["c_d"])
+    dme = df_final.melt(id_vars="Tec_vis", value_vars=["E_Produzione", "E_Carburante"],
+                        var_name=_t["c_fase"], value_name="tCO2")
+    dme[_t["c_fase"]] = dme[_t["c_fase"]].replace({"E_Produzione": _t["c_costruzione"],
+                                                   "E_Carburante": _t["c_uso"]})
+    f4 = px.bar(dme, x="Tec_vis", y="tCO2", color=_t["c_fase"], barmode="stack",
                 color_discrete_sequence=["#8E8E8E", "#D62728"])
     f4.add_hline(y=rif_foss["E_Produzione"] + rif_foss["E_Carburante"],
                  line_dash="dash", line_color="black")
@@ -477,37 +487,34 @@ with g4:
     st.plotly_chart(f4, use_container_width=True)
 
 st.divider()
-st.subheader("E. Costo Totale di Proprietà (TCO) Spacchettato [€]")
+st.subheader(_t["c_e"])
 voci = ["Costo_Veicolo", "Costo_Manutenzione", "Costo_Carburante", "Costo_Batteria"]
-dmc = df_final.melt(id_vars="Tecnologia", value_vars=voci, var_name="Voce", value_name="Euro")
-dmc["Voce"] = dmc["Voce"].replace({"Costo_Veicolo": "Acquisto Mezzo (CAPEX)",
-                                   "Costo_Manutenzione": "Manutenzione (OPEX)",
-                                   "Costo_Carburante": "Carburante (OPEX)",
-                                   "Costo_Batteria": "Sostituzione Batteria"})
-f5 = px.bar(dmc, x="Tecnologia", y="Euro", color="Voce", barmode="stack",
+dmc = df_final.melt(id_vars="Tec_vis", value_vars=voci,
+                    var_name=_t["c_voce"], value_name="Euro")
+dmc[_t["c_voce"]] = dmc[_t["c_voce"]].replace({"Costo_Veicolo": _t["c_capex"],
+                                               "Costo_Manutenzione": _t["c_maint"],
+                                               "Costo_Carburante": _t["c_fuel"],
+                                               "Costo_Batteria": _t["c_batt"]})
+f5 = px.bar(dmc, x="Tec_vis", y="Euro", color=_t["c_voce"], barmode="stack",
             color_discrete_sequence=["#0068C9", "#FFA421", "#2CA02C", "#7D3C98"])
 f5.add_hline(y=tco_fossile, line_dash="dash", line_color="black",
-             annotation_text=f"Baseline {fossile_name}")
-f5.update_layout(yaxis_title="Euro (€) nel Ciclo di Vita", xaxis_title="")
+             annotation_text=_t["c_baseline"].format(f=vis_tec(fossile_name)))
+f5.update_layout(yaxis_title=_t["c_euro"], xaxis_title="")
 st.plotly_chart(f5, use_container_width=True)
 
 if V["merci"]:
-    st.info(f"📦 **Attenzione al carico utile.** Il mezzo elettrico perde "
-            f"{df_final.loc[df_final['Tecnologia']==bev_name,'DPay'].values[0]:.2f} t di portata e "
-            f"l'idrogeno {df_final.loc[df_final['Tecnologia']==h2_name,'DPay'].values[0]:.2f} t "
-            f"(fonte: Roland Berger, già al netto della deroga UE). Sul costo per tonnellata "
-            f"trasportata il confronto cambia: "
-            + " · ".join(f"{r['Categoria_Base']} {r['EurTkm']:.3f} €/t·km"
-                         for _, r in df_base.iterrows()))
+    st.info(_t["payload"].format(
+        b=f"{df_final.loc[df_final['Tecnologia']==bev_name,'DPay'].values[0]:.2f}",
+        h=f"{df_final.loc[df_final['Tecnologia']==h2_name,'DPay'].values[0]:.2f}")
+        + " · ".join(f"{r['Cat_vis']} {r['EurTkm']:.3f} €/t·km"
+                     for _, r in df_base.iterrows()))
 
 # ==========================================================================
 # 7. ANALISI MACRO DI FLOTTA
 # ==========================================================================
 st.divider()
-st.header(f"🏢 Analisi Macro: Transizione Flotta Intera ({n_veicoli} veicoli)")
-st.write("Aggregazione del fabbisogno energetico e dei costi annui. Evidenzia la differenza "
-         "tra caricare le batterie dalla rete e produrre idrogeno verde con elettrolizzatori "
-         "(efficienza: ~55 kWh per kg di H2).")
+st.header(_t["mm_title"].format(n=n_veicoli))
+st.write(_t["mm_sub"])
 
 row_bev = df_final[df_final["Tecnologia"] == bev_name].iloc[0]
 row_h2 = df_final[df_final["Tecnologia"] == h2_name].iloc[0]
@@ -518,39 +525,34 @@ energia_elettrolizzatore = cons_h2_kg * 55.0
 
 f1_, f2_ = st.columns(2)
 with f1_:
-    st.subheader("🔋 Scenario 100% BEV")
-    st.metric("Fabbisogno Elettrico Diretto", f"{cons_bev_kwh/1000:,.1f} MWh/anno",
-              "Energia per la ricarica batterie")
-    st.metric("CAPEX Veicoli (Investimento)", f"€ {row_bev['Costo_Veicolo']*n_veicoli/1e6:,.2f} MLN")
-    st.metric("OPEX Annuo (Energia + Maint.)",
+    st.subheader(_t["mm_bev"])
+    st.metric(_t["mm_el"], f"{cons_bev_kwh/1000:,.1f} MWh/a", _t["mm_el_d"])
+    st.metric(_t["mm_capex"], f"€ {row_bev['Costo_Veicolo']*n_veicoli/1e6:,.2f} MLN")
+    st.metric(_t["mm_opex"],
               f"€ {(row_bev['Costo_Manutenzione']+row_bev['Costo_Carburante'])/anni_utilizzo*n_veicoli/1000:,.0f} k")
 with f2_:
-    st.subheader("💧 Scenario 100% Idrogeno")
-    st.metric("Massa di H2 Consumata", f"{cons_h2_kg/1000:,.1f} ton/anno")
-    st.metric("Fabbisogno Elettrico per H2 (FER)", f"{energia_elettrolizzatore/1000:,.1f} MWh/anno",
-              f"Differenza WtW vs BEV: +{(energia_elettrolizzatore-cons_bev_kwh)/1000:,.1f} MWh",
+    st.subheader(_t["mm_h2"])
+    st.metric(_t["mm_massa"], f"{cons_h2_kg/1000:,.1f} t/a")
+    st.metric(_t["mm_el_h2"], f"{energia_elettrolizzatore/1000:,.1f} MWh/a",
+              _t["mm_diff"].format(v=f"{(energia_elettrolizzatore-cons_bev_kwh)/1000:,.1f}"),
               delta_color="inverse")
-    st.metric("CAPEX Veicoli (Investimento)", f"€ {row_h2['Costo_Veicolo']*n_veicoli/1e6:,.2f} MLN")
-    st.metric("OPEX Annuo (Energia + Maint.)",
+    st.metric(_t["mm_capex"], f"€ {row_h2['Costo_Veicolo']*n_veicoli/1e6:,.2f} MLN")
+    st.metric(_t["mm_opex"],
               f"€ {(row_h2['Costo_Manutenzione']+row_h2['Costo_Carburante'])/anni_utilizzo*n_veicoli/1000:,.0f} k")
 
-st.info("""
-**💡 Attenzione agli oneri infrastrutturali non inclusi (ricarica / rifornimento):**
-Ai costi dei mezzi va sempre sommata la costruzione dell'infrastruttura.
-* **BEV:** da ~€ 2.000 (wallbox lente) a oltre € 80.000 per ogni colonnina fast/ultra-fast dedicata ai mezzi pesanti.
-* **H2 (FCEV):** una HRS ad alta pressione richiede un CAPEX tra **1 e 3+ milioni di €** in funzione dei kg erogati al giorno (vedi Tool 2.8).
-""")
+st.info(_t["mm_infra"])
 
-with st.expander("📋 Tabella dati completa"):
+with st.expander(_t["tab_title"]):
     show = df_final.sort_values(COSTO).copy()
-    cols = {"Tecnologia": "Tecnologia", "Autonomia": "Autonomia [km]",
-            "Consumo": "Consumo [kWh/km]", "Eta": "Efficienza WtW [%]",
-            "TCO_Totale": "TCO ciclo vita [€]", "EurKm": "€/km", "EurTkm": "€/t·km",
-            "Payload": "Carico utile [t]"}
+    cols = {"Tec_vis": _t["tab_tec"], "Autonomia": _t["tab_aut"],
+            "Consumo": _t["tab_cons"], "Eta": _t["tab_eta"],
+            "TCO_Totale": _t["tab_tco"], "EurKm": _t["tab_eurkm"],
+            "EurTkm": _t["tab_eurtkm"], "Payload": _t["tab_pay"]}
     st.dataframe(show[list(cols)].rename(columns=cols).style.format({
-        "Autonomia [km]": "{:,.0f}", "Consumo [kWh/km]": "{:.3f}",
-        "Efficienza WtW [%]": "{:.1f}", "TCO ciclo vita [€]": "€ {:,.0f}",
-        "€/km": "{:.3f}", "€/t·km": "{:.3f}", "Carico utile [t]": "{:.1f}"}),
+        _t["tab_aut"]: "{:,.0f}", _t["tab_cons"]: "{:.3f}",
+        _t["tab_eta"]: "{:.1f}", _t["tab_tco"]: "€ {:,.0f}",
+        _t["tab_eurkm"]: "{:.3f}", _t["tab_eurtkm"]: "{:.3f}",
+        _t["tab_pay"]: "{:.1f}"}),
         hide_index=True)
 
 # ==========================================================================
@@ -559,7 +561,7 @@ with st.expander("📋 Tabella dati completa"):
 WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwpP0x0hBnhOadXA43IieWg9EusAuhaafpyeXpyaStssDd7Qo-jwnuOttAllzz8r5JS/exec"
 
 st.divider()
-st.header("💾 Esportazione")
+st.header(_t["e_title"])
 
 # L'esito prevalente riprende la logica del verdetto mostrato a schermo.
 if not bev_fattibile:
@@ -573,9 +575,9 @@ em_fossile = rif_foss["E_Produzione"] + rif_foss["E_Carburante"]
 em_h2 = row_h2["E_Produzione"] + row_h2["E_Carburante"]
 
 codice = H.testo(comune, H.COL_ID)
-st.caption(f"I dati verranno associati a {H.testo(comune, H.COL_NOME)} (ID {codice}).")
+st.caption(_t["e_assoc"].format(c=H.testo(comune, H.COL_NOME), id=codice))
 
-if st.button("💾 Esporta nel database centrale", type="primary"):
+if st.button(_t["e_btn"], type="primary"):
     payload = {
         "ID_ISTAT": codice,
         "T22_N_VEICOLI_ANALIZZATI": n_veicoli,
@@ -592,19 +594,18 @@ if st.button("💾 Esporta nel database centrale", type="primary"):
         resp = requests.post(WEBHOOK_URL, data=json.dumps(payload),
                              headers={"Content-Type": "application/json"}, timeout=60)
         if resp.status_code in (200, 201):
-            st.success("✅ Dati trasmessi correttamente al database centrale.")
-            st.caption(f"Risposta del server: {resp.text}")
+            st.success(_t["e_ok"])
+            st.caption(_t["e_resp"].format(r=resp.text))
             st.balloons()
             salvato = True
         else:
-            st.error(f"Errore di sincronizzazione (codice {resp.status_code})")
+            st.error(_t["e_err"].format(c=resp.status_code))
     except requests.exceptions.ReadTimeout:
         # il timeout quasi sempre arriva a scrittura gia' avvenuta
-        st.warning("⏳ Il server non ha risposto in tempo. Quasi sempre significa che i "
-                   "dati sono stati scritti: controlla il foglio prima di ripetere l'invio.")
+        st.warning(_t["e_timeout"])
         salvato = True
     except Exception as e:
-        st.error(f"Errore di connessione: {e}")
+        st.error(_t["e_conn"].format(e=e))
 
     if salvato:
         H.dopo_salvataggio(comune, lingua=LANG)
