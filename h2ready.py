@@ -42,7 +42,7 @@ from streamlit_gsheets import GSheetsConnection
 # una funzione che non esiste). Ogni tool lo stampa in fondo alla barra
 # laterale, cosi' si vede a colpo d'occhio quale copia sta girando.
 # DA AGGIORNARE a ogni modifica del file.
-VERSIONE_MODULO = "2026-10-01 · link SL"
+VERSIONE_MODULO = "2026-11-18 · prosegui(ap=False) per togliere l'Action Plan"
 
 COL_ID = "ID_ISTAT"
 COL_NOME = "NOME_COMUNE"
@@ -121,10 +121,99 @@ URL_LINGUA = {
     },
 }
 
+# Nomi degli strumenti nelle lingue diverse dall'italiano.
+#
+# Il nome mostrato nell'elenco viene dalla colonna "nome" del foglio LINK, che
+# esiste in una lingua sola: cambiando lingua l'intestazione e le note si
+# traducevano ma i nomi restavano italiani, e un utente sloveno leggeva
+# "2.5 - Aree e potenziale FER" sotto un titolo in sloveno.
+#
+# L'italiano NON sta qui: resta quello del foglio, che e' la fonte di verita' e
+# che Matteo puo' cambiare senza toccare il codice. Qui stanno solo le
+# traduzioni, usate quando il foglio non le fornisce.
+#
+# Ordine di scelta, vedi nome_tool(): colonna "nome_sl"/"nome_en" del foglio,
+# poi questa tabella, poi la colonna "nome". Aggiungere al foglio una colonna
+# per lingua ha quindi la precedenza, ed e' il modo per correggere un nome
+# senza ridistribuire il modulo.
+NOMI_TOOL = {
+    "en": {
+        "1.1": "Institutional maturity self-assessment",
+        "1.2": "Territory profile",
+        "1.3": "Your pathway",
+        "2.1": "Hard-to-Abate company scouting",
+        "2.2": "Fleets and total cost of ownership",
+        "2.3": "Niche uses",
+        "2.4": "Heating",
+        "2.5": "Areas and renewable potential",
+        "2.6": "Green H2 production",
+        "2.7": "Logistics node",
+        "2.8": "HRS design",
+    },
+    "sl": {
+        "1.1": "Samoocena institucionalne zrelosti",
+        "1.2": "Profil območja",
+        "1.3": "Vaša pot",
+        "2.1": "Pregled podjetij Hard-to-Abate",
+        "2.2": "Vozni parki in skupni stroški lastništva",
+        "2.3": "Nišne rabe",
+        "2.4": "Ogrevanje",
+        "2.5": "Območja in potencial OVE",
+        "2.6": "Proizvodnja zelenega vodika",
+        "2.7": "Logistično vozlišče",
+        "2.8": "Zasnova polnilnice H2",
+    },
+}
+
+
+def nome_tool(codice, riga_foglio=None, lingua=None) -> str:
+    """Nome dello strumento nella lingua corrente.
+
+    riga_foglio e' la riga del foglio LINK: se contiene una colonna "nome_sl" o
+    "nome_en" valorizzata, quella vince su tutto. Serve a poter correggere una
+    traduzione dal foglio, senza ridistribuire il modulo a tutti i tool.
+    """
+    c = _codice_tool(codice)
+    lin = lingua or lingua_corrente()
+
+    if riga_foglio is not None:
+        try:
+            dal_foglio = riga_foglio.get(f"nome_{lin}", "")
+        except Exception:
+            dal_foglio = ""
+        dal_foglio = str(dal_foglio or "").strip()
+        if dal_foglio and dal_foglio.lower() not in ("nan", "none"):
+            return dal_foglio
+
+    tradotto = NOMI_TOOL.get(lin, {}).get(c)
+    if tradotto:
+        return tradotto
+
+    if riga_foglio is not None:
+        base = str(riga_foglio.get("nome", "") or "").strip()
+        if base and base.lower() not in ("nan", "none"):
+            return base
+    return c
+
+
 # Compatibilità: i nomi tradotti si ottengono con nome_percorso("A")
 NOMI_PERCORSO = {"A": "Domanda e usi finali",
                  "B": "Offerta e produzione",
                  "C": "Transito e logistica"}
+
+# Strumenti che non sono questionari ma pagine di navigazione: non si compilano
+# e non vanno elencati fra le cose da fare.
+#
+# Il 1.3 e' il menu stesso, e comparendo nel proprio elenco offriva di andare
+# dove gia' si era. Il difetto pero' non si fermava li': non avendo un testimone
+# in TESTIMONI non risulta mai completato, quindi nella tendina "prosegui cosi'"
+# di OGNI tool compariva come se restasse da compilare, e il conteggio nel
+# titolo della tendina non lo includeva. Si leggeva "restano 3 strumenti" e se
+# ne vedevano quattro.
+#
+# Da ogni altro tool il rientro al menu resta garantito dal pulsante
+# torna_al_menu(), che e' il posto giusto per quella funzione.
+TOOL_NAVIGAZIONE = {"1.3"}
 
 # Colonne che testimoniano il completamento di ciascun tool: se almeno una è
 # valorizzata, il tool risulta compilato.
@@ -785,7 +874,8 @@ def url_tool(codice, url_foglio, lingua=None):
     return URL_OVERRIDE.get(c, url_foglio)
 
 
-def mostra_prossimi_tool(riga, lingua=None, foglio="LINK", solo_mancanti=False):
+def mostra_prossimi_tool(riga, lingua=None, foglio="LINK", solo_mancanti=False,
+                         escludi=None):
     """Elenca gli strumenti: attivi come pulsanti, bloccati in grigio col motivo.
 
     Il foglio LINK ha colonne: tool | nome | url | percorso | categoria | ordine
@@ -795,6 +885,10 @@ def mostra_prossimi_tool(riga, lingua=None, foglio="LINK", solo_mancanti=False):
     solo_mancanti=True nasconde gli strumenti gia' compilati: serve al blocco
     "prosegui cosi'", dove l'elenco completo distoglierebbe da cio' che resta
     davvero da fare. Restituisce quanti strumenti sono stati mostrati.
+
+    escludi accetta altri codici da non elencare, oltre a TOOL_NAVIGAZIONE che
+    e' sempre escluso. Serve se un tool nuovo deve nascondere se stesso senza
+    toccare questo modulo.
     """
     if lingua:
         imposta_lingua(lingua)
@@ -821,15 +915,22 @@ def mostra_prossimi_tool(riga, lingua=None, foglio="LINK", solo_mancanti=False):
     if "ordine" in tabella.columns:
         tabella = tabella.sort_values("ordine")
 
+    da_escludere = set(TOOL_NAVIGAZIONE) | {_codice_tool(c) for c in (escludi or ())}
+
     mostrati = 0
     diagnostica = []
     for _, r in tabella.iterrows():
         codice = _codice_tool(r.get("tool", ""))
-        nome = str(r.get("nome", codice)).strip()
+        nome = nome_tool(codice, r)
         percorso = str(r.get("percorso", "")).strip().upper()
         url_grezzo = str(r.get("url", "")).strip()
         url = url_tool(codice, url_grezzo)
-        diagnostica.append((str(r.get("tool", "")), codice, url_grezzo, url))
+        escluso = codice in da_escludere
+        diagnostica.append((str(r.get("tool", "")), codice, nome,
+                            "escluso" if escluso else "", url_grezzo, url))
+
+        if escluso:
+            continue
 
         if solo_mancanti and fatti.get(codice):
             continue
@@ -887,10 +988,19 @@ def mostra_prossimi_tool(riga, lingua=None, foglio="LINK", solo_mancanti=False):
         with st.expander(f"Diagnostica link · h2ready {VERSIONE_MODULO} · "
                          f"lingua {lingua_corrente()}"):
             st.table(pd.DataFrame(diagnostica, columns=[
-                "cella 'tool'", "codice riconosciuto", "url nel foglio", "url servito"]))
+                "cella 'tool'", "codice riconosciuto", "nome servito", "stato",
+                "url nel foglio", "url servito"]))
+            st.caption("Esclusi dagli elenchi: " +
+                       ", ".join(sorted(da_escludere)) +
+                       " (pagine di navigazione, non questionari).")
             st.caption("Lingue con link propri: " +
                        ", ".join(sorted(URL_LINGUA)) + " · strumenti con link per lingua: " +
                        ", ".join(sorted({c for m in URL_LINGUA.values() for c in m})))
+            st.caption("Lingue con nomi tradotti: " + ", ".join(sorted(NOMI_TOOL)) +
+                       " · codici tradotti: " +
+                       ", ".join(sorted({c for m in NOMI_TOOL.values() for c in m})) +
+                       " · una colonna nome_" + lingua_corrente() +
+                       " nel foglio LINK ha la precedenza su questa tabella.")
     return mostrati
 
 
@@ -947,7 +1057,7 @@ def action_plan(riga, lingua=None, titolo=True):
                    type="primary", use_container_width=True)
 
 
-def prosegui(riga, lingua=None, aperto=True, menu=True, foglio="LINK"):
+def prosegui(riga, lingua=None, aperto=True, menu=True, foglio="LINK", ap=True):
     """Tendina con i soli strumenti ancora da compilare.
 
     Va chiamata in fondo a ogni tool. Mostra quanti strumenti restano gia' nel
@@ -956,6 +1066,9 @@ def prosegui(riga, lingua=None, aperto=True, menu=True, foglio="LINK"):
     Si disegna una volta sola per esecuzione dello script: un tool che la mette
     in fondo alla pagina E chiama dopo_salvataggio dopo un invio riuscito
     altrimenti la mostrerebbe due volte nella stessa schermata.
+
+    ap=False toglie il richiamo all'Action Plan sotto la tendina, per i tool in
+    cui quel bottone non c'entra. La tendina e il ritorno al menu restano.
     """
     global _PROSEGUI_DISEGNATO
     if _PROSEGUI_DISEGNATO:
@@ -990,18 +1103,22 @@ def prosegui(riga, lingua=None, aperto=True, menu=True, foglio="LINK"):
             if fatti_ora:
                 st.caption(TT("pros_fatti") + ": " + " · ".join(sorted(fatti_ora)))
 
-    action_plan(riga, titolo=False)
+    if ap:
+        action_plan(riga, titolo=False)
 
     if menu:
         torna_al_menu(riga)
 
 
-def dopo_salvataggio(riga, lingua=None):
+def dopo_salvataggio(riga, lingua=None, ap=True):
     """Da chiamare subito dopo un'esportazione riuscita.
 
     Rilegge la riga del Comune e mostra i passi successivi. Senza questo, il
     tool appena completato risulta ancora da compilare, perché la riga in
     sessione è quella caricata all'ingresso e la lettura del foglio è in cache.
+
+    ap si comporta come in prosegui(): un tool che passa ap=False in fondo alla
+    pagina deve passarlo anche qui, altrimenti il bottone ricompare dopo l'invio.
     """
     st.cache_data.clear()
     aggiornata = None
@@ -1013,7 +1130,7 @@ def dopo_salvataggio(riga, lingua=None):
         st.session_state["h2ready_riga"] = aggiornata
         riga = aggiornata
 
-    prosegui(riga, lingua=lingua)
+    prosegui(riga, lingua=lingua, ap=ap)
     return riga
 
 
