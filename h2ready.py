@@ -42,7 +42,7 @@ from streamlit_gsheets import GSheetsConnection
 # una funzione che non esiste). Ogni tool lo stampa in fondo alla barra
 # laterale, cosi' si vede a colpo d'occhio quale copia sta girando.
 # DA AGGIORNARE a ogni modifica del file.
-VERSIONE_MODULO = "2026-11-18 · prosegui(ap=False) per togliere l'Action Plan"
+VERSIONE_MODULO = "2026-11-19 · ap=False + chiusura del 2.3"
 
 COL_ID = "ID_ISTAT"
 COL_NOME = "NOME_COMUNE"
@@ -115,7 +115,6 @@ URL_LINGUA = {
     "sl": {
         "1.1": "https://tally.so/r/gDo25P",
         "1.2": "https://tally.so/r/lbEQLN",
-        "2.3": "https://tally.so/r/PdqKle",
         "2.5": "https://tally.so/r/44b5LY",
         "2.7": "https://tally.so/r/QKQLdG",
     },
@@ -143,7 +142,6 @@ NOMI_TOOL = {
         "1.3": "Your pathway",
         "2.1": "Hard-to-Abate company scouting",
         "2.2": "Fleets and total cost of ownership",
-        "2.3": "Niche uses",
         "2.4": "Heating",
         "2.5": "Areas and renewable potential",
         "2.6": "Green H2 production",
@@ -156,7 +154,6 @@ NOMI_TOOL = {
         "1.3": "Vaša pot",
         "2.1": "Pregled podjetij Hard-to-Abate",
         "2.2": "Vozni parki in skupni stroški lastništva",
-        "2.3": "Nišne rabe",
         "2.4": "Ogrevanje",
         "2.5": "Območja in potencial OVE",
         "2.6": "Proizvodnja zelenega vodika",
@@ -222,8 +219,6 @@ TESTIMONI = {
     "1.2": ["T12_SCORE_A", "T12_SCORE_B", "T12_SCORE_C"],
     "2.1": ["T21_FABBISOGNO_H2_TON_ANNO", "T21_N_AZIENDE_IDONEE"],
     "2.2": ["T22_FABBISOGNO_H2_TON_ANNO", "T22_N_VEICOLI_ANALIZZATI"],
-    "2.3": ["T23_FLAG_RIFUGI", "T23_FLAG_MEZZI_CRITICI", "T23_FLAG_TRENI",
-            "T23_FLAG_DEPURATORI", "T23_FLAG_COLD_STORAGE", "T23_FLAG_PORTI_AEROPORTI"],
     "2.4": ["T24_FABBISOGNO_TERMICO_KWH_ANNO"],
     "2.5": ["T25_AREE_IDONEE_MQ", "T25_FER_INSTALLATA_MW"],
     "2.6": ["T26_PRODUZIONE_H2_TON_ANNO", "T26_TAGLIA_ELETTROLIZZATORE_MW"],
